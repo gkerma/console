@@ -75,24 +75,21 @@ st.session_state.setdefault("ascii", False)
 # CONSOLE ENGINE
 # ------------------------------------------------------------
 def help_text():
-    return """
-COMMANDS:
-  help                Show help
-  list                List nodes
-  clear               Clear console
-
-  connect <node>
-  connect <node> --mode holo/hardcore/hacker/elite
-
-OTHER:
-  theme cyan/purple
-  flux on/off
-  ascii on/off
-"""
+    return (
+        "COMMANDS:\n"
+        "  help                Show help\n"
+        "  list                List nodes\n"
+        "  clear               Clear console\n\n"
+        "  connect <node>\n"
+        "  connect <node> --mode holo/hardcore/hacker/elite\n\n"
+        "OTHER:\n"
+        "  theme cyan/purple\n"
+        "  flux on/off\n"
+        "  ascii on/off\n"
+    )
 
 def list_nodes():
-    return "
-".join([f"- {k}: {v['label']}" for k, v in NODES.items()])
+    return "\n".join([f"- {k}: {v['label']}" for k, v in NODES.items()])
 
 def parse(cmd):
     c = cmd.strip().lower()
@@ -134,7 +131,7 @@ def is_streamlit_app(url: str) -> bool:
 def sandbox(node: str, mode: str):
     url = NODES[node]["url"]
 
-    # 1) MIRROR pour Streamlit
+    # 1) MIRROR for Streamlit apps
     if "?embed=true" in url or is_streamlit_app(url):
         try:
             html = requests.get(url, timeout=6).text
@@ -150,7 +147,7 @@ def sandbox(node: str, mode: str):
         """, height=800, scrolling=True)
         return
 
-    # 2) IFRAME pour sites HTML classiques
+    # 2) IFRAME for standard HTML websites
     components.html(f"""
     <div class='sandbox-frame mode-{mode}' id='sandboxContainer'>
         <iframe id='sandboxIframe' src='{url}'></iframe>
@@ -192,8 +189,7 @@ col_console, col_sandbox, col_nodes = st.columns([1.2, 2.2, 1])
 with col_console:
     st.markdown("### Console")
 
-    st.text_area("", "
-".join(st.session_state.console), height=360)
+    st.text_area("", "\n".join(st.session_state.console), height=360)
 
     with st.form("cmdform", clear_on_submit=True):
         cmd = st.text_input(" >_")
@@ -221,3 +217,19 @@ with col_console:
         st.rerun()
 
 # ------------------------------------------------------------
+# SANDBOX CENTER
+# ------------------------------------------------------------
+with col_sandbox:
+    st.markdown(f"### Sandbox — {NODES
+        # --- COMPLETE BUTTON ACTIONS ---
+        if c3.button("HACK", key=f"hacker_{key}"):
+            st.session_state.node = key
+            st.session_state.mode = "hacker"
+            st.rerun()
+
+        if c4.button("ELITE", key=f"elite_{key}"):
+            st.session_state.node = key
+            st.session_state.mode = "elite"
+            st.rerun()
+
+# End of app.py
