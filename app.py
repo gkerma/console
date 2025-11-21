@@ -22,16 +22,20 @@ def load_css():
 load_css()
 
 # ------------------------------------------------------------
-# INTRO — NO FREEZE VERSION
+# INTRO (NON-BLOCKANTE, NE STOPPE PAS L'APP)
 # ------------------------------------------------------------
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = True
-    st.markdown("""
-    <div id="introScreen">
-        <div style='font-family:Orbitron;font-size:42px;color:#C86BFA;'>MAEGIA SYSTEM</div>
-        <div style='margin-top:10px;color:#FFF;opacity:0.75;font-size:18px;'>BOOTING...</div>
-    </div>
-    """, unsafe_allow_html=True)
+
+# On affiche *toujours* le div d'intro.
+# Le CSS le masque automatiquement après 1.2s.
+st.markdown("""
+<div id="introScreen">
+    <div style='font-family:Orbitron;font-size:42px;color:#C86BFA;'>MAEGIA SYSTEM</div>
+    <div style='margin-top:10px;color:#FFF;opacity:0.75;font-size:18px;'>BOOTING...</div>
+</div>
+""", unsafe_allow_html=True)
+
 
 # ------------------------------------------------------------
 # DATA
@@ -86,7 +90,7 @@ for k, v in DEFAULTS.items():
     st.session_state.setdefault(k, v)
 
 # ------------------------------------------------------------
-# HELP COMMANDS
+# HELP / COMMANDS
 # ------------------------------------------------------------
 def help_text():
     return """
@@ -109,9 +113,6 @@ OTHER:
 def list_nodes():
     return "\n".join([f"- {k}: {v['label']}" for k,v in SITES.items()])
 
-# ------------------------------------------------------------
-# PARSE COMMAND
-# ------------------------------------------------------------
 def parse(cmd):
     c = cmd.lower().strip()
 
@@ -119,10 +120,8 @@ def parse(cmd):
     if c in ["list", "ls"]: return ("print", list_nodes())
     if c in ["clear", "cls"]: return ("clear", None)
     if c == "exit": return ("exit", None)
-
     if c == "flux on": return ("flux", True)
     if c == "flux off": return ("flux", False)
-
     if c == "ascii on": return ("ascii", True)
     if c == "ascii off": return ("ascii", False)
 
@@ -136,7 +135,6 @@ def parse(cmd):
         parts = c.split()
         node = parts[1]
         mode = DEFAULT_MODES[node]
-
         if "--mode" in parts:
             m = parts[parts.index("--mode") + 1]
             if m in MODES:
@@ -144,7 +142,7 @@ def parse(cmd):
         return ("load", (node, mode))
 
     if c in SITES:
-        return ("load",(c, DEFAULT_MODES[c]))
+        return ("load", (c, DEFAULT_MODES[c]))
 
     return ("print", f"Unknown command: {cmd}")
 
@@ -158,7 +156,7 @@ def ascii_line():
     )
 
 # ------------------------------------------------------------
-# IFRAME SYSTEM
+# IFRAME
 # ------------------------------------------------------------
 def sandbox(url, mode):
     klass = {
@@ -212,7 +210,6 @@ if st.session_state.fullwindow:
         <button onclick="window.location.reload()">EXIT</button>
     </div>
     """, unsafe_allow_html=True)
-
     sandbox(st.session_state.url, "fullscreen")
     st.stop()
 
@@ -232,7 +229,7 @@ document.body.classList.add('{st.session_state.theme}');
 col_left, col_right = st.columns([2, 1])
 
 # ------------------------------------------------------------
-# LEFT (CONSOLE)
+# LEFT SIDE
 # ------------------------------------------------------------
 with col_left:
 
@@ -300,13 +297,13 @@ with col_left:
     elif tab == "Info":
         st.write(st.session_state)
 
-    else:  # Oracle AI placeholder
+    else:
         q = st.text_input("Question:")
         if st.button("Ask"):
             st.write("Response:", q[::-1])
 
 # ------------------------------------------------------------
-# RIGHT (CARDS)
+# RIGHT SIDE
 # ------------------------------------------------------------
 with col_right:
     st.markdown("<div class='right-panel-scroll'>", unsafe_allow_html=True)
@@ -335,7 +332,6 @@ with col_right:
             st.session_state.fullwindow = True
             st.rerun()
 
-        # MODE BUTTONS
         c1, c2, c3, c4, c5 = st.columns(5)
 
         if c1.button("HOLO", key=f"holo_{key}"):
@@ -350,7 +346,7 @@ with col_right:
             st.session_state.mode = "hardcore"
             st.rerun()
 
-        if c3.button("FULL", key=f"full_{key}"):
+        if c3.button("FULL", key=f"full_{key}"]:
             st.session_state.node = key
             st.session_state.url = meta["url"]
             st.session_state.mode = "fullscreen"
