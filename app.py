@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 # ============================================================
-# INTRO ONE-TIME
+# INTRO CINEMATIQUE
 # ============================================================
 
 if "intro_done" not in st.session_state:
@@ -23,8 +23,9 @@ if "intro_done" not in st.session_state:
     st.markdown(intro_html, unsafe_allow_html=True)
     st.stop()
 
+
 # ============================================================
-# SITES AVEC URL EMBED STREAMLIT + MODES PAR DÉFAUT
+# SITES + MODES PAR DÉFAUT
 # ============================================================
 
 SITES = {
@@ -64,7 +65,7 @@ DEFAULT_MODES = {
 }
 
 # ============================================================
-# SONS
+# SONS (Mode + Warp + CyberPack complet)
 # ============================================================
 
 MODE_SOUNDS = {
@@ -75,14 +76,47 @@ MODE_SOUNDS = {
 
 WARP_SOUND = "https://assets.mixkit.co/sfx/preview/mixkit-quick-win-video-game-notification-269.mp3"
 
+CYBERPACK = [
+    "https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3",
+    "https://assets.mixkit.co/sfx/preview/mixkit-retro-game-notification-212.mp3",
+    "https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-coin-2042.mp3",
+    "https://assets.mixkit.co/sfx/preview/mixkit-small-hit-in-a-game-2072.mp3",
+    "https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-casino-notification-211.mp3",
+    "https://assets.mixkit.co/sfx/preview/mixkit-cool-interface-click-tone-2562.mp3",
+    "https://assets.mixkit.co/sfx/preview/mixkit-arcade-bonus-alert-767.mp3",
+    "https://assets.mixkit.co/sfx/preview/mixkit-explainer-video-game-alert-1376.mp3",
+    "https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3124.mp3",
+    "https://assets.mixkit.co/sfx/preview/mixkit-tech-break-interface-2428.mp3",
+]
+
 # ============================================================
-# CSS LOADER
+# CSS
 # ============================================================
 
 def load_css():
     css_path = Path("style.css")
     if css_path.exists():
         st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
+
+# Tilt 3D JS injection (1 seule fois)
+st.markdown("""
+<script>
+document.addEventListener("mousemove", function(e){
+    document.querySelectorAll('.node-card').forEach(card=>{
+        const r = card.getBoundingClientRect();
+        const x = e.clientX - r.left;
+        const y = e.clientY - r.top;
+        const mx = r.width/2;
+        const my = r.height/2;
+        const rx = (y - my)/20;
+        const ry = (mx - x)/20;
+        card.style.setProperty('--rx', rx + 'deg');
+        card.style.setProperty('--ry', ry + 'deg');
+        card.classList.add("tilt");
+    })
+});
+</script>
+""", unsafe_allow_html=True)
 
 
 # ============================================================
@@ -93,156 +127,116 @@ def help_text():
     return dedent("""
     COMMANDES DISPONIBLES :
 
-      help                       → affiche cette aide
+      help                       → aide
       list                       → liste des nœuds
       clear                      → efface la console
+      exit                       → quitter mode fullwindow
 
     CONNEXION :
-
-      connect <node>             → charge un nœud
+      connect <node>             → charge node
       connect <node> --mode X    → mode visuel personnalisé
       open <node>                → mode FULL WINDOW
-      exit                       → sortir du mode FULL WINDOW
 
-    MODES VISUELS :
-
-      holo        → hologramme léger
-      hardcore    → glitch + rgb split
-      fullscreen  → mode plein écran API
+    MODES :
+      holo | hardcore | fullscreen
     """)
 
 def list_nodes():
-    lines = ["NŒUDS DISPONIBLES :"]
-    for key, meta in SITES.items():
-        lines.append(f"  - {key:10} → {meta['label']} :: {meta['url']}")
-    return "\n".join(lines)
+    out = ["NœUDS DISPONIBLES :"]
+    for k, meta in SITES.items():
+        out.append(f"  - {k:10} → {meta['label']} ({meta['url']})")
+    return "\n".join(out)
 
 
 # ============================================================
-# PARSEUR DE COMMANDE
+# PARSEUR DE COMMANDES
 # ============================================================
 
 def parse_command(cmd):
     cmd = cmd.strip()
-    lower = cmd.lower()
+    low = cmd.lower()
 
-    if lower in ["help", "?", "man"]:
+    if low in ["help", "?", "man"]:
         return {"action": "print", "payload": help_text()}
 
-    if lower in ["clear", "cls"]:
+    if low in ["clear", "cls"]:
         return {"action": "clear"}
 
-    if lower in ["list", "ls"]:
+    if low in ["list", "ls"]:
         return {"action": "print", "payload": list_nodes()}
 
-    if lower.startswith("open "):
-        target = lower.split(" ", 1)[1]
-        if target in SITES:
-            return {
-                "action": "fullscreen_app",
-                "target": target,
-                "url": SITES[target]["url"],
-            }
-        return {"action": "print", "payload": f"ERREUR : node inconnu '{target}'"}
+    if low.startswith("open "):
+        node = low.split(" ", 1)[1]
+        if node in SITES:
+            return {"action": "fullscreen", "node": node}
+        return {"action": "print", "payload": f"Node inconnu '{node}'"}
 
-    if lower in ["exit", "quit", "back"]:
+    if low in ["exit", "quit", "back"]:
         return {"action": "exit_fullwindow"}
 
-    # CONNECT
-    if lower.startswith("connect "):
-        parts = lower.split()
-        target = parts[1]
-        if target not in SITES:
-            return {"action": "print", "payload": f"ERREUR : node '{target}' inconnu"}
+    if low.startswith("connect "):
+        parts = low.split()
+        node = parts[1]
+        if node not in SITES:
+            return {"action": "print", "payload": f"Node inconnu '{node}'"}
 
-        mode = DEFAULT_MODES[target]
-
+        mode = DEFAULT_MODES[node]
         if "--mode" in parts:
-            idx = parts.index("--mode")
-            if idx + 1 < len(parts):
-                mode = parts[idx + 1]
+            mode = parts[parts.index("--mode") + 1]
 
-        return {
-            "action": "load_frame",
-            "target": target,
-            "url": SITES[target]["url"],
-            "mode": mode,
-        }
+        return {"action": "load", "node": node, "mode": mode}
 
-    # SHORT FORM
-    if lower in SITES:
-        return {
-            "action": "load_frame",
-            "target": lower,
-            "url": SITES[lower]["url"],
-            "mode": DEFAULT_MODES[lower],
-        }
+    if low in SITES:
+        return {"action": "load", "node": low, "mode": DEFAULT_MODES[low]}
 
     return {"action": "print", "payload": f"Commande inconnue : {cmd}"}
 
 
 # ============================================================
-# SANDBOX IFRAME — VERSION FULL DYNAMIQUE
+# SANDBOX IFRAME (Dynamique, Warp, Son)
 # ============================================================
 
 def sandbox_iframe(url, mode="holo"):
-    mode_class = {
+
+    klass = {
         "holo": "cyber-holo cyber-holo-active",
         "hardcore": "cyber-hardcore",
         "fullscreen": ""
     }.get(mode, "cyber-holo")
 
-    sound = MODE_SOUNDS.get(mode, MODE_SOUNDS["holo"])
+    mode_sound = MODE_SOUNDS.get(mode, MODE_SOUNDS["holo"])
+    random_sound = CYBERPACK[0]
 
     html = f"""
-    <svg width="0" height="0">
-      <filter id="rgb-split">
-        <feColorMatrix in="SourceGraphic" type="matrix"
-        values="1 0 0 0 0
-                0 0 0 0 0
-                0 0 0 0 0
-                0 0 0 1 0"/>
-        <feOffset dx="-2" dy="0" result="r"/>
-        <feColorMatrix in="SourceGraphic" type="matrix"
-        values="0 0 0 0 0
-                0 1 0 0 0
-                0 0 0 0 0
-                0 0 0 1 0"/>
-        <feOffset dx="2" dy="0" result="g"/>
-        <feBlend in="r" in2="g" mode="screen"/>
-      </filter>
-    </svg>
-
-    <audio id="modeSound" src="{sound}"></audio>
+    <audio id="modeSound" src="{mode_sound}"></audio>
     <audio id="warpSound" src="{WARP_SOUND}"></audio>
+    <audio id="fxPack" src="{random_sound}"></audio>
 
-    <div id="sandboxContainer" class="cybersandbox-frame warp-transition {mode_class}">
+    <div id="sandboxContainer" class="cybersandbox-frame warp-transition {klass}">
         <button class="cyber-fullscreen-btn" onclick="toggleFullscreen()">FULLSCREEN</button>
         <iframe id="sandboxIframe" src="{url}"></iframe>
     </div>
 
     <script>
-    function resizeIframe() {{
-        const frame = document.getElementById("sandboxIframe");
-        const container = document.getElementById("sandboxContainer");
-
-        let viewport = window.innerHeight;
-        let rect = container.getBoundingClientRect();
-        let newHeight = viewport - rect.top - 10;
-
-        frame.style.height = newHeight + "px";
-        container.style.height = newHeight + "px";
+    function resizeIframe(){{
+        const f=document.getElementById("sandboxIframe");
+        const c=document.getElementById("sandboxContainer");
+        let vh=window.innerHeight;
+        let t=c.getBoundingClientRect().top;
+        let h=vh - t - 10;
+        f.style.height=h+"px";
+        c.style.height=h+"px";
     }}
-
-    window.addEventListener("load", resizeIframe);
-    window.addEventListener("resize", resizeIframe);
+    window.addEventListener("load",resizeIframe);
+    window.addEventListener("resize",resizeIframe);
 
     document.getElementById("modeSound").play();
     document.getElementById("warpSound").play();
+    document.getElementById("fxPack").play();
 
-    function toggleFullscreen() {{
+    function toggleFullscreen(){{
         var el = document.getElementById("sandboxContainer");
-        if (!document.fullscreenElement) el.requestFullscreen();
+        if(!document.fullscreenElement) el.requestFullscreen();
         else document.exitFullscreen();
     }}
     </script>
@@ -252,36 +246,35 @@ def sandbox_iframe(url, mode="holo"):
 
 
 # ============================================================
-# ORACLE AI — MINI IA INTERNE
+# ORACLE AI
 # ============================================================
 
-def afficher_oracle_ai():
-    st.markdown("## ORACLE AI — Assistant Augmenté")
-    q = st.text_input("Pose ta question à l’Oracle :")
+def oracle_ai():
+    st.markdown("## ORACLE AI — Assistant Intégré")
+    q = st.text_input("Pose ta question :")
     if st.button("Interroger"):
-        # PLACEHOLDER IA (tu remplaceras par ton API)
-        st.markdown("**Réponse :** " + q[::-1])
+        st.write("Réponse :", q[::-1])  # Placeholder IA
 
 
 # ============================================================
 # INIT SESSION
 # ============================================================
 
-if "console_log" not in st.session_state:
-    st.session_state.console_log = [
+if "console" not in st.session_state:
+    st.session_state.console = [
         "Initialisation système…",
-        "Nœud par défaut chargé : CYBERMIND",
-        "Tape 'help' pour les commandes.",
+        "Nœud par défaut : CYBERMIND",
+        "Tape 'help' pour les commandes."
     ]
 
-if "current_node" not in st.session_state:
-    st.session_state.current_node = "cybermind"
+if "node" not in st.session_state:
+    st.session_state.node = "cybermind"
 
-if "current_url" not in st.session_state:
-    st.session_state.current_url = SITES["cybermind"]["url"]
+if "mode" not in st.session_state:
+    st.session_state.mode = DEFAULT_MODES["cybermind"]
 
-if "current_mode" not in st.session_state:
-    st.session_state.current_mode = DEFAULT_MODES["cybermind"]
+if "url" not in st.session_state:
+    st.session_state.url = SITES["cybermind"]["url"]
 
 if "fullwindow" not in st.session_state:
     st.session_state.fullwindow = False
@@ -293,128 +286,144 @@ if "fullwindow" not in st.session_state:
 
 load_css()
 
-# MODE FULLWINDOW
+# FULLWINDOW
 if st.session_state.fullwindow:
     st.markdown("""
-        <style>
-        .block-container { padding: 0 !important; }
-        </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-        <div style='position:fixed;top:15px;left:15px;z-index:100000;'>
+        <style>.block-container {padding:0!important;}</style>
+        <div style="position:fixed;top:15px;left:15px;z-index:999999;">
             <button onclick="window.location.reload()"
                 style="background:rgba(0,246,255,0.3);
-                       color:#00f6ff;
-                       padding:6px 12px;
                        border:1px solid #00f6ff;
-                       border-radius:8px;
-                       font-family:Roboto Mono, monospace;">
-                EXIT CONSOLE
+                       color:#00f6ff;padding:6px 12px;
+                       border-radius:8px;font-family:Roboto Mono;">
+                EXIT
             </button>
         </div>
     """, unsafe_allow_html=True)
 
-    sandbox_iframe(st.session_state.current_url, "fullscreen")
+    sandbox_iframe(st.session_state.url, "fullscreen")
     st.stop()
 
-# MODE NORMAL
 st.markdown('<div class="scanlines"></div>', unsafe_allow_html=True)
 
 col_left, col_right = st.columns([2, 1])
 
+# ============================================================
+# COLONNE GAUCHE
+# ============================================================
+
 with col_left:
 
-    tab = st.radio(
-        "Navigation",
-        ["Console", "Info", "Oracle AI"],
-        horizontal=True
-    )
+    tab = st.radio("Navigation", ["Console", "Info", "Oracle AI"], horizontal=True)
 
     if tab == "Console":
 
-        st.markdown("""
-        <div class="console-header">
-            <div class="console-title">MAEGIA // CYBER CONSOLE</div>
-            <div class="console-subtitle">Nœud d’accès aux instances distantes</div>
-        </div>
-        """, unsafe_allow_html=True)
+        console_text = "\n".join(st.session_state.console)
+        st.text_area("", console_text, height=200)
 
-        console_text = "\n".join(st.session_state.console_log)
-        st.text_area("", console_text, height=210)
+        with st.form("cmd", clear_on_submit=True):
+            cmd = st.text_input(">_")
+            go = st.form_submit_button("EXECUTER")
 
-        with st.form("command", clear_on_submit=True):
-            cmd = st.text_input(">_ COMMANDE")
-            submit = st.form_submit_button("EXECUTER")
-
-        if submit and cmd:
-            st.session_state.console_log.append("> " + cmd)
+        if go and cmd:
+            st.session_state.console.append("> " + cmd)
             result = parse_command(cmd)
 
             if result["action"] == "print":
-                st.session_state.console_log.append(result["payload"])
+                st.session_state.console.append(result["payload"])
 
             elif result["action"] == "clear":
-                st.session_state.console_log = [
-                    "Console effacée.",
-                    "Tape 'help' pour recommencer."
-                ]
-
-            elif result["action"] == "load_frame":
-                st.session_state.current_node = result["target"]
-                st.session_state.current_url = result["url"]
-                st.session_state.current_mode = result["mode"]
-                st.session_state.console_log.append(
-                    f"Chargement de {result['target']} en mode {result['mode']}…"
-                )
-
-            elif result["action"] == "fullscreen_app":
-                st.session_state.current_node = result["target"]
-                st.session_state.current_url = result["url"]
-                st.session_state.fullwindow = True
+                st.session_state.console = ["Console effacée."]
 
             elif result["action"] == "exit_fullwindow":
                 st.session_state.fullwindow = False
-                st.session_state.console_log.append("Retour au mode console.")
+
+            elif result["action"] == "fullscreen":
+                st.session_state.node = result["node"]
+                st.session_state.url = SITES[result["node"]]["url"]
+                st.session_state.fullwindow = True
+
+            elif result["action"] == "load":
+                st.session_state.node = result["node"]
+                st.session_state.mode = result["mode"]
+                st.session_state.url = SITES[result["node"]]["url"]
+                st.session_state.console.append(f"Chargement {result['node']} en mode {result['mode']}…")
 
             st.rerun()
 
-        sandbox_iframe(
-            st.session_state.current_url,
-            st.session_state.current_mode
-        )
+        sandbox_iframe(st.session_state.url, st.session_state.mode)
 
     elif tab == "Info":
-        st.markdown("## INFORMATIONS SYSTÈME")
-        st.write("Nœud actif :", st.session_state.current_node)
-        st.write("Mode visuel :", st.session_state.current_mode)
-        st.write("URL :", st.session_state.current_url)
+        st.write("Nœud actif :", st.session_state.node)
+        st.write("Mode :", st.session_state.mode)
+        st.write("URL :", st.session_state.url)
 
     elif tab == "Oracle AI":
-        afficher_oracle_ai()
+        oracle_ai()
 
+
+# ============================================================
+# COLONNE DROITE — CARDS 3D + BOUTONS
+# ============================================================
 
 with col_right:
     st.markdown('<div class="right-panel-scroll">', unsafe_allow_html=True)
-    st.markdown("""
-    <div class="panel">
-        <div class="panel-title">Nœuds Maegia</div>
-        <div class="panel-subtitle">Accès direct</div>
-    </div>
-    """, unsafe_allow_html=True)
 
     for key, meta in SITES.items():
-        active = " node-active" if key == st.session_state.current_node else ""
+
+        active = " node-active" if key == st.session_state.node else ""
+
         st.markdown(
             f"""
-            <div class="node-card{active}">
+            <div class="node-card {active}">
                 <div class="node-title">{meta['label']}</div>
                 <div class="node-url">{meta['url']}</div>
-                <div class="node-command">Commande: <span>{meta['code']}</span></div>
-                <a class="node-button" href="{meta['url']}" target="_blank">OUVRIR DIRECT</a>
             </div>
-            """,
-            unsafe_allow_html=True,
+            """, unsafe_allow_html=True
         )
+
+        # Bouton console connect
+        if st.button(f"connect {key}", key=f"b_{key}_connect"):
+            cmd = f"connect {key} --mode {DEFAULT_MODES[key]}"
+            st.session_state.console.append("> " + cmd)
+            st.session_state.node = key
+            st.session_state.url = meta["url"]
+            st.session_state.mode = DEFAULT_MODES[key]
+            st.rerun()
+
+        # FULLWINDOW
+        if st.button(f"FULLWINDOW {key}", key=f"b_{key}_fw"):
+            st.session_state.console.append("> open " + key)
+            st.session_state.node = key
+            st.session_state.url = meta["url"]
+            st.session_state.fullwindow = True
+            st.rerun()
+
+        # Modes HOLO / HARDCORE / FULLSCREEN
+        m1, m2, m3 = st.columns(3)
+
+        if m1.button(f"HOLO {key}", key=f"h_{key}"):
+            cmd = f"connect {key} --mode holo"
+            st.session_state.console.append("> " + cmd)
+            st.session_state.node = key
+            st.session_state.mode = "holo"
+            st.session_state.url = meta["url"]
+            st.rerun()
+
+        if m2.button(f"HARD {key}", key=f"hc_{key}"):
+            cmd = f"connect {key} --mode hardcore"
+            st.session_state.console.append("> " + cmd)
+            st.session_state.node = key
+            st.session_state.mode = "hardcore"
+            st.session_state.url = meta["url"]
+            st.rerun()
+
+        if m3.button(f"FULL {key}", key=f"fl_{key}"):
+            cmd = f"connect {key} --mode fullscreen"
+            st.session_state.console.append("> " + cmd)
+            st.session_state.node = key
+            st.session_state.mode = "fullscreen"
+            st.session_state.url = meta["url"]
+            st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
