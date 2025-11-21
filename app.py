@@ -369,3 +369,4 @@ with col_right:
             st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
+
