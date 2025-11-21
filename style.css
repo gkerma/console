@@ -1,262 +1,302 @@
-/* ============================================================
-   GLOBAL
-   ============================================================ */
+/* ========================================================================
+   FONTS
+   ======================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500&family=Orbitron:wght@500;700&family=VT323&display=swap');
 
-body, .stApp {
-    background: radial-gradient(circle at top, #151530 0, #050509 55%, #000);
+/* ========================================================================
+   GLOBAL & RESET
+   ======================================================================== */
+html, body, .stApp {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #00010A;
     color: #00f6ff;
-    font-family: "Roboto Mono", monospace;
+    font-family: 'Roboto Mono', monospace;
 }
 
-#MainMenu, footer, header { visibility: hidden; }
+/* Hide Streamlit UI */
+#MainMenu, footer, header {visibility: hidden;}
 
-/* Scanlines overlay */
+/* ========================================================================
+   SCANLINES GLOBAL
+   ======================================================================== */
 .scanlines {
     pointer-events: none;
     position: fixed;
     inset: 0;
     background: repeating-linear-gradient(
-        to bottom,
-        rgba(255,255,255,0.04) 0px,
-        rgba(255,255,255,0.04) 1px,
-        rgba(0,0,0,0.05) 2px
+      to bottom,
+      rgba(255,255,255, 0.04) 0px,
+      rgba(255,255,255, 0.04) 1px,
+      rgba(0,0,0,0.05) 2px
     );
     mix-blend-mode: soft-light;
-    opacity: 0.2;
+    opacity: 0.22;
     z-index: 999;
 }
 
-/* ============================================================
-   RIGHT PANEL SCROLLABLE
-   ============================================================ */
+/* ========================================================================
+   INTRO MAEGIA GLITCH
+   ======================================================================== */
+#introScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    background: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: introFadeOut 1s ease-out forwards;
+    animation-delay: 3.5s;
+}
 
+@keyframes introFadeOut { to {opacity: 0; visibility: hidden;} }
+
+/* ========================================================================
+   NODE CARDS + TILT 3D
+   ======================================================================== */
+.node-card {
+    border: 1px solid rgba(0,246,255,0.5);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+    background: radial-gradient(circle at top,
+        rgba(0,246,255,0.07),
+        rgba(0,0,0,0.85));
+    box-shadow: 0 0 14px rgba(0,246,255,0.2);
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+    transform-style: preserve-3d;
+}
+.node-card:hover {
+    box-shadow: 0 0 18px rgba(0,246,255,0.5);
+}
+.node-active {
+    border-color: #ff53d3 !important;
+    box-shadow: 0 0 22px rgba(255,83,211,0.9) !important;
+}
+.node-title {
+    font-family: Orbitron, sans-serif;
+    letter-spacing: 0.12em;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+.node-url {
+    opacity: 0.7;
+    font-size: 11px;
+}
+
+/* ========================================================================
+   RIGHT SIDEBAR SCROLL
+   ======================================================================== */
 .right-panel-scroll {
     max-height: calc(100vh - 20px);
     overflow-y: auto;
-    padding-right: 8px;
+    padding-right: 6px;
 }
 .right-panel-scroll::-webkit-scrollbar { width: 6px; }
 .right-panel-scroll::-webkit-scrollbar-thumb {
     background: #00f6ff;
     border-radius: 6px;
 }
-.right-panel-scroll::-webkit-scrollbar-track {
-    background: rgba(255,255,255,0.05);
-}
 
-/* ============================================================
-   INTRO CINEMATIQUE
-   ============================================================ */
-
-#introScreen {
-    position: fixed;
-    inset: 0;
-    z-index: 999999;
-    background: black;
-    color: #00f6ff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    animation: introFade 1s ease-out forwards;
-    animation-delay: 3.2s;
-}
-
-@keyframes introFade {
-    to { opacity: 0; visibility: hidden; }
-}
-
-.introText {
-    font-size: 1.4rem;
-    opacity: 0;
-    animation: introTextAnim 3s ease-out forwards;
-}
-
-@keyframes introTextAnim {
-    0% { opacity:0; transform:scale(1.05); filter:blur(3px); }
-    40% { opacity:1; transform:scale(1); filter:blur(0); }
-    90% { opacity:1; }
-    100% { opacity:0; }
-}
-
-/* ============================================================
-   CONSOLE HEADER
-   ============================================================ */
-
-.console-header {
-    border: 1px solid #00f6ff;
-    padding: 12px;
-    margin-bottom: 16px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, rgba(0,246,255,0.04), rgba(255,0,221,0.06));
-    box-shadow: 0 0 16px rgba(0,246,255,0.4);
-}
-.console-title {
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    font-size: 1.1rem;
-}
-.console-subtitle {
-    font-size: 0.8rem;
-    color: #ff53d3;
-    margin-top: 4px;
-}
-
-/* ============================================================
-   NODES / PANELS
-   ============================================================ */
-
-.panel {
-    border: 1px solid rgba(0,246,255,0.5);
-    padding: 12px;
-    border-radius: 12px;
-    background: linear-gradient(145deg, rgba(0,246,255,0.05), rgba(255,0,212,0.08));
-    margin-bottom: 10px;
-}
-
-.node-card {
-    border: 1px solid rgba(0,246,255,0.4);
-    border-radius: 12px;
-    padding: 10px;
-    margin-bottom: 10px;
-    box-shadow: 0 0 12px rgba(0,246,255,0.2);
-    background: radial-gradient(circle at top, rgba(0,246,255,0.07), rgba(0,0,0,0.9));
-}
-.node-card.node-active {
-    border-color: #ff53d3;
-    box-shadow: 0 0 18px rgba(255,83,211,0.7);
-}
-
-.node-title {
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-}
-.node-url { font-size: 0.75rem; opacity: 0.7; }
-.node-command span { color: #ff53d3; }
-
-.node-button {
-    margin-top: 8px;
-    display: inline-block;
-    padding: 6px 12px;
-    border: 1px solid #00f6ff;
-    border-radius: 8px;
-    text-decoration: none;
-    color: #00f6ff;
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
-}
-.node-button:hover {
-    border-color: #ff53d3;
-    box-shadow: 0 0 12px rgba(255,83,211,0.8);
-}
-
-/* ============================================================
-   SANDBOX IFRAME CYBERPUNK
-   ============================================================ */
-
+/* ========================================================================
+   CYBERSANDBOX IFRAME FRAME
+   ======================================================================== */
 .cybersandbox-frame {
     position: relative;
     width: 100%;
-    border-radius: 18px;
-    border: 2px solid rgba(0,246,255,0.9);
+    border-radius: 16px;
+    border: 2px solid rgba(0,246,255,0.8);
     background: #000;
+    box-shadow:
+        0 0 22px rgba(0,246,255,0.4),
+        inset 0 0 14px rgba(255,0,212,0.2);
     overflow: hidden;
-    box-shadow: 0 0 25px rgba(0,246,255,0.4),
-                inset 0 0 18px rgba(255,0,212,0.2);
 }
-
-.cybersandbox-frame::before {
-    content: "";
-    position:absolute;
-    inset:0;
-    pointer-events:none;
-    background: repeating-linear-gradient(
-        to bottom,
-        rgba(255,255,255,0.04) 0px,
-        rgba(255,255,255,0.04) 1px,
-        rgba(0,0,0,0.05) 2px
-    );
-    opacity: .25;
-    mix-blend-mode: soft-light;
-    z-index: 10;
-}
-
 .cybersandbox-frame iframe {
-    width:100%;
+    width: 100%;
     border: none;
     position: relative;
     z-index: 5;
 }
 
-/* ============================================================
-   WARP TRANSITION (Animation changement de nœud)
-   ============================================================ */
+/* ------------------------------------------------------------------------
+   FULLSCREEN BUTTON
+   ------------------------------------------------------------------------ */
+.cyber-fullscreen-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: rgba(0,246,255,0.25);
+    border: 1px solid #00f6ff;
+    color: #00f6ff;
+    padding: 6px 12px;
+    font-family: 'Roboto Mono', monospace;
+    border-radius: 8px;
+    cursor: pointer;
+}
 
+/* ========================================================================
+   WARP TRANSITION (iframe loading)
+   ======================================================================== */
 .warp-transition {
     animation: cyberWarp 0.6s ease-out;
 }
 @keyframes cyberWarp {
-    0% { opacity:0; filter:blur(8px) brightness(0.4); transform:scale(1.05); }
-    40% { opacity:1; filter:blur(2px) brightness(1.4); transform:scale(1.02); }
-    100% { opacity:1; filter:none; transform:scale(1); }
+    0% {opacity:0; filter:blur(8px) brightness(0.4); transform:scale(1.05);}
+    40%{opacity:1; filter:blur(2px) brightness(1.4); transform:scale(1.02);}
+    100%{opacity:1; filter:none; transform:scale(1);}
 }
 
-/* ============================================================
-   MODES VISUELS
-   ============================================================ */
-
-/* HOLO */
-.cyber-holo { filter: drop-shadow(0 0 8px #00f6ff) brightness(1.15); backdrop-filter: blur(2px); opacity:.92; }
-.cyber-holo-active { animation: holoPulse 3.8s infinite ease-in-out; }
+/* ========================================================================
+   MODES VISUELS — HOLO / HARDCORE / FULLSCREEN
+   ======================================================================== */
+.cyber-holo {
+    filter: drop-shadow(0 0 8px #00f6ff) brightness(1.1);
+}
+.cyber-holo-active {
+    animation: holoPulse 3s infinite ease-in-out;
+}
 @keyframes holoPulse {
-    0% { filter:drop-shadow(0 0 8px #00f6ff); }
-    50% { filter:drop-shadow(0 0 16px #ff00de); }
-    100% { filter:drop-shadow(0 0 8px #00f6ff); }
+    0% { filter: drop-shadow(0 0 8px #00f6ff); }
+    50% { filter: drop-shadow(0 0 16px #ff00de); }
+    100% { filter: drop-shadow(0 0 8px #00f6ff); }
 }
 
-/* HARDCORE */
 .cyber-hardcore {
-    animation: glitch .35s infinite steps(2,end),
-               rgbSplit 1.8s infinite ease-in-out;
-    backdrop-filter: brightness(0.9) contrast(1.3);
-    opacity: 0.95;
+    animation:
+        glitch .25s infinite steps(2,end),
+        rgbSplit 1.7s infinite ease-in-out;
 }
 @keyframes glitch {
-    0% { transform:translate(0); }
-    20%{ transform:translate(-3px,2px);}
-    40%{ transform:translate(3px,-2px);}
-    60%{ transform:translate(-2px,1px);}
-    80%{ transform:translate(2px,-1px);}
-    100%{ transform:translate(0);}
+    0%{transform:translate(0);}
+    20%{transform:translate(-3px,2px);}
+    40%{transform:translate(3px,-2px);}
+    60%{transform:translate(-2px,1px);}
+    80%{transform:translate(2px,-1px);}
+    100%{transform:translate(0);}
 }
 @keyframes rgbSplit {
-    0%,100%{ filter:none;}
-    25%{ filter:url('#rgb-split'); }
-    50%{ filter:hue-rotate(20deg) saturate(1.5); }
-    75%{ filter:url('#rgb-split') brightness(1.2); }
+    0%,100% { filter:none; }
+    25% { filter:hue-rotate(20deg); }
+    50% { filter:saturate(1.5); }
+    75% { filter:hue-rotate(-20deg); }
 }
 
-/* FULLSCREEN BTN */
-.cyber-fullscreen-btn {
+/* ========================================================================
+   HACKER MODE GLOBAL (terminal vert)
+   ======================================================================== */
+body.hacker, .stApp.hacker {
+    background: #000 !important;
+    color: #00FF66 !important;
+    font-family: 'VT323', monospace !important;
+    letter-spacing: 0.03em;
+}
+.hacker input, .hacker textarea, .hacker button {
+    background: #000 !important;
+    color: #00FF66 !important;
+    border: 1px solid #00FF66 !important;
+}
+.hacker .node-card {
+    border: 1px solid #00FF66 !important;
+    box-shadow: 0 0 12px #00FF66 !important;
+}
+.hacker .cybersandbox-frame {
+    border: 2px solid #00FF66;
+    box-shadow: 0 0 22px #00FF66;
+}
+.hacker-mode iframe {
+    filter:
+      grayscale(1)
+      brightness(0.8)
+      contrast(1.7)
+      hue-rotate(80deg);
+}
+
+/* ========================================================================
+   ELITE MODE (CRT fort / glitch)
+   ======================================================================== */
+.hacker-elite-mode {
+    border: 2px solid #00FF33 !important;
+    box-shadow: 0 0 32px #00FF33;
+    filter: contrast(1.4) brightness(0.8);
+    overflow: hidden;
+    position: relative;
+}
+.hacker-elite-mode::before {
+    content:"";
     position:absolute;
-    top:14px;
-    right:15px;
-    padding:6px 12px;
-    background:rgba(0,246,255,0.3);
-    border:1px solid #00f6ff;
-    border-radius:8px;
-    color:#00f6ff;
-    cursor:pointer;
-    font-size:0.75rem;
-    letter-spacing:0.1em;
+    inset:0;
+    background: radial-gradient(circle,rgba(0,255,127,0.2),transparent 75%);
+    animation: eliteGlow 2s infinite alternate;
+    z-index:12;
+}
+@keyframes eliteGlow {
+    0%{opacity:0.1;}
+    100%{opacity:0.35;}
+}
+.hacker-elite-mode iframe {
+    filter: grayscale(1) contrast(2) hue-rotate(75deg);
+    animation: eliteGlitch 2s infinite;
+}
+@keyframes eliteGlitch {
+    0%{clip-path: inset(0 0 0 0);}
+    50%{clip-path: inset(5% 0 15% 0);}
+    100%{clip-path: inset(0 0 0 0);}
 }
 
-/* FULLSCREEN MODE */
-.cybersandbox-frame.fullscreen {
-    position:fixed !important;
-    inset:0 !important;
-    width:100% !important;
-    height:100% !important;
-    border-radius:0 !important;
-    z-index:999999 !important;
+/* ========================================================================
+   PURPLE THEME (UI ONLY)
+   ======================================================================== */
+body.purple, .stApp.purple {
+    background: radial-gradient(circle at top, #2D0045 0, #0E0016 50%, #000) !important;
+    color: #C86BFA;
+}
+.purple .node-card {
+    border-color: #C86BFA !important;
+    box-shadow: 0 0 18px rgba(200,107,250,0.5) !important;
+}
+.purple .cybersandbox-frame {
+    border-color: #C86BFA !important;
+    box-shadow: 0 0 22px rgba(200,107,250,0.4),
+                inset 0 0 14px rgba(255,0,212,0.1) !important;
+}
+
+/* ========================================================================
+   FLUX DATA MATRIX OVERLAY
+   ======================================================================== */
+.data-matrix {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(0,255,0,0.12) 0px,
+        rgba(0,255,0,0.12) 2px,
+        rgba(0,0,0,0) 3px
+    );
+    animation: dataFlow 0.45s linear infinite;
+    z-index: 14;
+}
+@keyframes dataFlow {
+    from { background-position-y: 0; }
+    to   { background-position-y: 60px; }
+}
+
+/* ========================================================================
+   FULLWINDOW EXIT BUTTON
+   ======================================================================== */
+.fw-exit {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 99999;
+}
+.fw-exit button {
+    background: rgba(0,246,255,0.2);
+    border: 1px solid #00f6ff;
+    padding: 6px 12px;
+    color: #00f6ff;
+    border-radius: 10px;
+    font-family: 'Roboto Mono';
 }
