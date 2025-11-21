@@ -39,17 +39,25 @@ html, body, .stApp {
 #introScreen {
     position: fixed;
     inset: 0;
-    background: black;
-    z-index: 999999;
+    background: #000;
+    z-index: 999999999; /* ok */
     display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
 
     opacity: 1;
-    animation: introFadeOut 1.2s ease-out forwards;
-    animation-delay: 2.8s;
+
+    /* La ligne suivante FORCE l'intro à disparaître */
+    animation: introFadeFix 0.8s forwards;
+    animation-delay: 1.8s;
 }
+
+@keyframes introFadeFix {
+    0%   { opacity: 1; }
+    100% { opacity: 0; visibility: hidden; display:none; }
+}
+
 
 .intro-logo {
     font-family: Orbitron, sans-serif;
