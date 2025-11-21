@@ -346,7 +346,7 @@ with col_right:
             st.session_state.mode = "hardcore"
             st.rerun()
 
-        if c3.button("FULL", key=f"full_{key}"]:
+        if c3.button("FULL", key=f"full_{key}"):
             st.session_state.node = key
             st.session_state.url = meta["url"]
             st.session_state.mode = "fullscreen"
