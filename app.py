@@ -122,13 +122,21 @@ def parse_command(cmd: str):
 
 # ---------- INIT SESSION ----------
 if "console_log" not in st.session_state:
-    st.session_state.console_log = []
+    st.session_state.console_log = [
+        "Initialisation système…",
+        "Nœud par défaut chargé : CYBERMIND → https://cybermind.fr",
+        "Tapez 'help' pour afficher la liste des commandes.",
+    ]
+
 if "last_command" not in st.session_state:
     st.session_state.last_command = ""
+
+# NŒUD CHARGÉ PAR DÉFAUT : CYBERMIND
 if "current_node" not in st.session_state:
-    st.session_state.current_node = None
+    st.session_state.current_node = "cybermind"
+
 if "current_url" not in st.session_state:
-    st.session_state.current_url = None
+    st.session_state.current_url = SITES["cybermind"]["url"]
 
 
 def append_log(line: str):
