@@ -1,223 +1,124 @@
-# MAEGIA Console - Fusion Sandbox (Mirror + Iframe)
-# Layout 3 Colonnes – Cyberpunk Light Mode
+/* =============================================================
+   MAEGIA Console – Cyberpunk Light Style (Fusion Sandbox)
+   Compatible with app.py fusion (mirror + iframe)
+   ============================================================= */
 
-import streamlit as st
-import streamlit.components.v1 as components
-import requests
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse
-from pathlib import Path
+/* -------------------- Global -------------------- */
+html, body, .stApp {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #000000;
+    color: #00f6ff;
+    font-family: 'Roboto Mono', monospace;
+}
+#MainMenu, header, footer {display: none !important;}
 
-st.set_page_config(page_title="MAEGIA Console", layout="wide", page_icon="⬢")
-
-# ------------------------------------------------------------
-# LOAD CSS
-# ------------------------------------------------------------
-if Path("style.css").exists():
-    st.markdown(f"<style>{Path('style.css').read_text()}</style>", unsafe_allow_html=True)
-
-# ------------------------------------------------------------
-# NODE DEFINITIONS
-# ------------------------------------------------------------
-NODES = {
-    "game": {
-        "label": "GAME // Arcade",
-        "url": "https://game.maegia.tv/?embed=true",
-    },
-    "kragzouy": {
-        "label": "KRAGZOUY // Zone X",
-        "url": "https://kragzouy.maegia.tv/?embed=true",
-    },
-    "oracle": {
-        "label": "ORACLE // Divination",
-        "url": "https://oracle.maegia.tv/?embed=true",
-    },
-    "pali": {
-        "label": "PALI // Linguistique",
-        "url": "https://pali.maegia.tv/?embed=true",
-    },
-    "cybermind": {
-        "label": "CYBERMIND // Central",
-        "url": "https://cybermind.fr",
-    },
-    "ganimed": {
-        "label": "GANIMED // Nexus",
-        "url": "https://ganimed.fr",
-    },
+/* -------------------- Themes -------------------- */
+body.cyan {
+    background: #000510;
+    color: #00eaff;
+}
+body.purple {
+    background: #120018;
+    color: #c86bfa;
+}
+body.hacker {
+    background: #000;
+    color: #00ff66;
+    font-family: 'VT323', monospace;
 }
 
-DEFAULT_MODE = {
-    "game": "holo",
-    "kragzouy": "holo",
-    "oracle": "holo",
-    "pali": "hardcore",
-    "cybermind": "holo",
-    "ganimed": "holo",
+/* -------------------- Console -------------------- */
+textarea, .stTextInput, .stTextArea textarea {
+    background: #001018 !important;
+    color: #00f6ff !important;
+    border: 1px solid #00f6ff66 !important;
+    border-radius: 6px;
 }
 
-MODES = ["holo", "hardcore", "hacker", "elite"]
+/* -------------------- Node Cards -------------------- */
+.node-card {
+    border: 1px solid #00f6ff55;
+    background: #001018;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+.node-active {
+    border-color: #ff53d3 !important;
+}
+.node-title {
+    font-family: Orbitron, sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+}
+.node-url {
+    opacity: 0.6;
+    font-size: 10px;
+}
 
-# ------------------------------------------------------------
-# SESSION STATE
-# ------------------------------------------------------------
-st.session_state.setdefault("console", [
-    "System initialized.",
-    "Default node : cybermind",
-    "Type 'help' for commands."
-])
-st.session_state.setdefault("node", "cybermind")
-st.session_state.setdefault("mode", DEFAULT_MODE["cybermind"])
-st.session_state.setdefault("theme", "cyan")
-st.session_state.setdefault("flux", False)
-st.session_state.setdefault("ascii", False)
+/* -------------------- Sandbox Wrapper -------------------- */
+.sandbox-frame {
+    width: 100%;
+    background: #000;
+    border: 1px solid #00f6ff55;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 10px;
+}
 
-# ------------------------------------------------------------
-# CONSOLE ENGINE
-# ------------------------------------------------------------
-def help_text():
-    return """
-COMMANDS:
-  help                Show help
-  list                List nodes
-  clear               Clear console
+/* Modes (light version) */
+.mode-holo {
+    box-shadow: 0 0 10px #00eaffaa;
+}
+.mode-hardcore {
+    filter: contrast(1.3) brightness(1.2);
+}
+.mode-hacker {
+    filter: grayscale(1) contrast(1.4) hue-rotate(80deg);
+}
+.mode-elite {
+    filter: contrast(1.8) brightness(0.8);
+}
 
-  connect <node>
-  connect <node> --mode holo/hardcore/hacker/elite
+/* iframe inside sandbox */
+#sandboxIframe {
+    width: 100%;
+    border: none;
+    height: 600px;
+}
 
-OTHER:
-  theme cyan/purple
-  flux on/off
-  ascii on/off
-"""
+/* -------------------- Mirror Snapshot -------------------- */
+.sandbox-frame pre, .sandbox-frame p, .sandbox-frame div {
+    color: inherit !important;
+}
 
-def list_nodes():
-    return "
-".join([f"- {k}: {v['label']}" for k, v in NODES.items()])
+/* -------------------- Data Matrix (flux mode) -------------------- */
+.data-matrix {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(0,255,0,0.12) 0px,
+        rgba(0,255,0,0.12) 2px,
+        rgba(0,0,0,0) 3px
+    );
+    animation: flux-move 0.5s linear infinite;
+    z-index: 5;
+}
+@keyframes flux-move {
+    from {background-position-y: 0;}
+    to   {background-position-y: 40px;}
+}
 
-def parse(cmd):
-    c = cmd.strip().lower()
+/* -------------------- 3 Columns Layout Helpers -------------------- */
+.block-container {
+    padding-top: 1rem !important;
+}
 
-    if c in ["help", "?"]: return ("print", help_text())
-    if c in ["list", "ls"]: return ("print", list_nodes())
-    if c in ["clear", "cls"]: return ("clear", None)
-
-    if c == "flux on": return ("flux", True)
-    if c == "flux off": return ("flux", False)
-    if c == "ascii on": return ("ascii", True)
-    if c == "ascii off": return ("ascii", False)
-
-    if c.startswith("theme "):
-        return ("theme", c.split()[1])
-
-    if c.startswith("connect "):
-        parts = c.split()
-        node = parts[1]
-        if node not in NODES:
-            return ("print", f"Unknown node '{node}'")
-
-        mode = DEFAULT_MODE[node]
-        if "--mode" in parts:
-            idx = parts.index("--mode") + 1
-            if idx < len(parts) and parts[idx] in MODES:
-                mode = parts[idx]
-        return ("load", (node, mode))
-
-    return ("print", f"Unknown command '{cmd}'")
-
-# ------------------------------------------------------------
-# SANDBOX FUSION (IFRAME OR MIRROR)
-# ------------------------------------------------------------
-def is_streamlit_app(url: str) -> bool:
-    host = urlparse(url).hostname or ""
-    return host.endswith("streamlit.app") or "maegia.tv" in host
-
-def sandbox(node: str, mode: str):
-    url = NODES[node]["url"]
-
-    # 1) MIRROR pour Streamlit
-    if "?embed=true" in url or is_streamlit_app(url):
-        try:
-            html = requests.get(url, timeout=6).text
-            soup = BeautifulSoup(html, "html.parser")
-            for s in soup.find_all("script"):
-                s.decompose()
-            snapshot = str(soup)
-        except Exception as e:
-            snapshot = f"<p style='color:red;'>Mirror error: {e}</p>"
-
-        components.html(f"""
-        <div class='sandbox-frame mode-{mode}'>{snapshot}</div>
-        """, height=800, scrolling=True)
-        return
-
-    # 2) IFRAME pour sites HTML classiques
-    components.html(f"""
-    <div class='sandbox-frame mode-{mode}' id='sandboxContainer'>
-        <iframe id='sandboxIframe' src='{url}'></iframe>
-    </div>
-    <script>
-    function resizeIframe() {{
-        const f = document.getElementById('sandboxIframe');
-        const c = document.getElementById('sandboxContainer');
-        if (!f || !c) return;
-        const top = c.getBoundingClientRect().top;
-        const h = window.innerHeight - top - 30;
-        f.style.height = h + 'px';
-        c.style.height = h + 'px';
-    }}
-    resizeIframe();
-    setTimeout(resizeIframe, 150);
-    window.addEventListener('resize', resizeIframe);
-    </script>
-    """, height=0)
-
-# ------------------------------------------------------------
-# APPLY THEME
-# ------------------------------------------------------------
-st.markdown(f"""
-<script>
-document.body.classList.remove('cyan','purple','hacker');
-document.body.classList.add('{st.session_state.theme}');
-</script>
-""", unsafe_allow_html=True)
-
-# ------------------------------------------------------------
-# LAYOUT 3 COLONNES
-# ------------------------------------------------------------
-col_console, col_sandbox, col_nodes = st.columns([1.2, 2.2, 1])
-
-# ------------------------------------------------------------
-# CONSOLE LEFT
-# ------------------------------------------------------------
-with col_console:
-    st.markdown("### Console")
-
-    st.text_area("", "
-".join(st.session_state.console), height=360)
-
-    with st.form("cmdform", clear_on_submit=True):
-        cmd = st.text_input(" >_")
-        run = st.form_submit_button("EXECUTE")
-
-    if run and cmd:
-        st.session_state.console.append("> " + cmd)
-        act, pay = parse(cmd)
-
-        if act == "print":
-            st.session_state.console.append(pay)
-        elif act == "clear":
-            st.session_state.console = ["Console cleared."]
-        elif act == "flux":
-            st.session_state.flux = pay
-        elif act == "ascii":
-            st.session_state.ascii = pay
-        elif act == "theme":
-            st.session_state.theme = pay
-        elif act == "load":
-            node, mode = pay
-            st.session_state.node = node
-            st.session_state.mode = mode
-            st.session_state.console.append(f"Loading {node} [{mode}]")
-        st.rerun()
-
-# ------------------------------------------------------------
+/* Scroll panel for nodes */
+.stColumn > div {
+    overflow-y: auto;
+    max-height: 88vh;
+}
