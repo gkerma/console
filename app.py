@@ -28,8 +28,8 @@ if "intro_done" not in st.session_state:
     st.session_state.intro_done = True
     st.markdown("""
     <div id="introScreen">
-        <div class='intro-logo'>MAEGIA SYSTEM</div>
-        <div class='intro-sub'>BOOTING...</div>
+        <div style='font-family:Orbitron;font-size:38px;color:#C86BFA;'>MAEGIA SYSTEM</div>
+        <div style='margin-top:10px;color:#fff;opacity:0.8;'>BOOTING...</div>
     </div>
     """, unsafe_allow_html=True)
     st.stop()
