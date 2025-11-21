@@ -1,60 +1,48 @@
 import streamlit as st
 import streamlit.components.v1 as components
 from pathlib import Path
-from textwrap import dedent
 import random
 
-# -------------------------------------------------------------
+# ------------------------------------------------------------
 # PAGE CONFIG
-# -------------------------------------------------------------
+# ------------------------------------------------------------
 st.set_page_config(
     page_title="MAEGIA Cyber Console",
     page_icon="⬢",
     layout="wide"
 )
 
-# -------------------------------------------------------------
+# ------------------------------------------------------------
 # LOAD CSS
-# -------------------------------------------------------------
+# ------------------------------------------------------------
 def load_css():
-    css_path = Path("style.css")
-    if css_path.exists():
-        st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
+    css = Path("style.css").read_text()
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 load_css()
 
-# -------------------------------------------------------------
-# INITIAL INTRO (CSS HANDLES EVERYTHING)
-# -------------------------------------------------------------
+# ------------------------------------------------------------
+# INTRO (NOIR FIXÉ)
+# ------------------------------------------------------------
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = True
-    st.markdown("<div id='introScreen'></div>", unsafe_allow_html=True)
+    st.markdown("""
+    <div id="introScreen">
+        <div class='intro-logo'>MAEGIA SYSTEM</div>
+        <div class='intro-sub'>BOOTING...</div>
+    </div>
+    """, unsafe_allow_html=True)
     st.stop()
 
-# -------------------------------------------------------------
-# SITES
-# -------------------------------------------------------------
+# ------------------------------------------------------------
+# DATA
+# ------------------------------------------------------------
 SITES = {
-    "game": {
-        "label": "GAME // Arcade dimensionnelle",
-        "url": "https://game.maegia.tv/?embed=true&embed_options=dark_theme",
-    },
-    "kragzouy": {
-        "label": "KRAGZOUY // Zone expérimentale",
-        "url": "https://kragzouy.maegia.tv/?embed=true&embed_options=dark_theme",
-    },
-    "oracle": {
-        "label": "ORACLE // Divination système",
-        "url": "https://oracle.maegia.tv/?embed=true&embed_options=dark_theme",
-    },
-    "pali": {
-        "label": "PALI // Protocoles linguistiques",
-        "url": "https://pali.maegia.tv/?embed=true&embed_options=dark_theme",
-    },
-    "cybermind": {
-        "label": "CYBERMIND // Nœud central",
-        "url": "https://cybermind.fr",
-    },
+    "game":   {"label": "GAME // Arcade", "url": "https://game.maegia.tv/?embed=true"},
+    "kragzouy": {"label": "KRAGZOUY // Zone X", "url": "https://kragzouy.maegia.tv/?embed=true"},
+    "oracle": {"label": "ORACLE // Divination", "url": "https://oracle.maegia.tv/?embed=true"},
+    "pali":   {"label": "PALI // Linguistique", "url": "https://pali.maegia.tv/?embed=true"},
+    "cybermind":{"label": "CYBERMIND // Central", "url": "https://cybermind.fr"}
 }
 
 DEFAULT_MODES = {
@@ -62,14 +50,11 @@ DEFAULT_MODES = {
     "kragzouy": "holo",
     "oracle": "holo",
     "pali": "hardcore",
-    "cybermind": "fullscreen",
+    "cybermind": "fullscreen"
 }
 
 MODES = ["holo", "hardcore", "fullscreen", "hacker", "elite"]
 
-# -------------------------------------------------------------
-# SOUNDS (mapping, CSS/JS plays them)
-# -------------------------------------------------------------
 MODE_SOUNDS = {
     "holo": "https://assets.mixkit.co/sfx/preview/mixkit-game-ball-tap-2073.mp3",
     "hardcore": "https://assets.mixkit.co/sfx/preview/mixkit-fast-small-sweep-transition-166.mp3",
@@ -77,417 +62,276 @@ MODE_SOUNDS = {
     "hacker": "https://assets.mixkit.co/sfx/preview/mixkit-old-computer-boot-up-2328.mp3",
     "elite": "https://assets.mixkit.co/sfx/preview/mixkit-data-select-1101.mp3",
 }
-
 WARP_SOUND = "https://assets.mixkit.co/sfx/preview/mixkit-quick-win-video-game-notification-269.mp3"
 
-# PACK SFX CYBERPUNK
-CYBERPACK = [
-    "https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3",
-    "https://assets.mixkit.co/sfx/preview/mixkit-retro-game-notification-212.mp3",
-    "https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-coin-2042.mp3",
-]
-
-# -------------------------------------------------------------
-# SESSION STATE
-# -------------------------------------------------------------
-if "console" not in st.session_state:
-    st.session_state.console = [
+# ------------------------------------------------------------
+# SESSION DEFAULTS
+# ------------------------------------------------------------
+for key, val in {
+    "console": [
         "System initialized.",
         "Default node : cybermind",
         "Type 'help' for commands."
-    ]
+    ],
+    "node": "cybermind",
+    "mode": DEFAULT_MODES["cybermind"],
+    "url": SITES["cybermind"]["url"],
+    "fullwindow": False,
+    "theme": "cyan",
+    "flux": False,
+    "ascii": False,
+    "theme_before_hacker": "cyan"
+}.items():
+    st.session_state.setdefault(key, val)
 
-if "node" not in st.session_state:
-    st.session_state.node = "cybermind"
-
-if "mode" not in st.session_state:
-    st.session_state.mode = DEFAULT_MODES["cybermind"]
-
-if "url" not in st.session_state:
-    st.session_state.url = SITES["cybermind"]["url"]
-
-if "fullwindow" not in st.session_state:
-    st.session_state.fullwindow = False
-
-if "theme" not in st.session_state:
-    st.session_state.theme = "cyan"
-
-if "flux" not in st.session_state:
-    st.session_state.flux = False
-
-if "ascii" not in st.session_state:
-    st.session_state.ascii = False
-
-if "theme_before_hacker" not in st.session_state:
-    st.session_state.theme_before_hacker = "cyan"
-
-# -------------------------------------------------------------
-# ASCII RAIN FUNCTION
-# -------------------------------------------------------------
-def append_ascii_line():
-    chars = "01░▒▓█"
-    line = "".join(random.choice(chars) for _ in range(80))
-    st.session_state.console.append("> " + line)
-
-# -------------------------------------------------------------
-# HELP + LIST
-# -------------------------------------------------------------
+# ------------------------------------------------------------
+# CONSOLE HELP
+# ------------------------------------------------------------
 def help_text():
-    return dedent("""
-    COMMANDS :
+    return """
+COMMANDS:
+  help                Show help
+  list                List nodes
+  clear               Clear console
+  open <node>         Full window
+  exit                Exit full window
+  connect <node>      Load node
+  connect <node> --mode X
 
-      help                       → show help
-      list                       → list nodes
-      clear                      → clear console
+MODES: holo | hardcore | fullscreen | hacker | elite
 
-    CONNECTION :
-
-      connect <node>             → open node
-      connect <node> --mode X    → choose mode
-      open <node>                → fullwindow mode
-      exit                       → close fullwindow
-
-    MODES :
-
-      holo | hardcore | fullscreen | hacker | elite
-
-    OTHER :
-
-      flux on/off                → flux data matrix overlay
-      ascii on/off               → ASCII rain mode
-      theme cyan/purple          → UI theme
-    """)
+OTHER:
+  theme cyan/purple
+  flux on/off
+  ascii on/off
+"""
 
 def list_nodes():
-    msg = ["NODES :"]
-    for key, meta in SITES.items():
-        msg.append(f" - {key:12} → {meta['label']}")
-    return "\n".join(msg)
+    return "\n".join([f"- {k}: {v['label']}" for k,v in SITES.items()])
 
-# -------------------------------------------------------------
-# COMMAND PARSER
-# -------------------------------------------------------------
-def parse_command(cmd):
-    cmd = cmd.strip()
-    low = cmd.lower()
+# ------------------------------------------------------------
+# PARSE COMMAND
+# ------------------------------------------------------------
+def parse(cmd):
+    c = cmd.lower().strip()
 
-    if low in ["help", "?", "man"]:
-        return {"action": "print", "payload": help_text()}
+    if c in ["help", "?"]: return ("print", help_text())
+    if c in ["list", "ls"]: return ("print", list_nodes())
+    if c in ["clear", "cls"]: return ("clear", None)
+    if c == "exit": return ("exit", None)
 
-    if low in ["list", "ls"]:
-        return {"action": "print", "payload": list_nodes()}
+    if c == "flux on":  return ("flux", True)
+    if c == "flux off": return ("flux", False)
 
-    if low in ["clear", "cls"]:
-        return {"action": "clear"}
+    if c == "ascii on": return ("ascii", True)
+    if c == "ascii off":return ("ascii", False)
 
-    if low.startswith("open "):
-        node = low.split()[1]
-        if node in SITES:
-            return {"action": "fullwindow", "node": node}
-        return {"action": "print", "payload": f"Unknown node '{node}'"}
+    if c.startswith("theme "):
+        theme = c.split()[1]
+        return ("theme", theme)
 
-    if low in ["exit", "quit"]:
-        return {"action": "exit"}
+    if c.startswith("open "):
+        node=c.split()[1]
+        return ("fullwindow", node)
 
-    if low == "flux on":
-        return {"action": "flux", "payload": True}
-    if low == "flux off":
-        return {"action": "flux", "payload": False}
-
-    if low == "ascii on":
-        return {"action": "ascii", "payload": True}
-    if low == "ascii off":
-        return {"action": "ascii", "payload": False}
-
-    if low.startswith("theme "):
-        t = low.split()[1]
-        if t in ["cyan", "purple"]:
-            return {"action": "theme", "payload": t}
-        return {"action": "print", "payload": "Unknown theme."}
-
-    if low.startswith("connect "):
-        parts = low.split()
+    if c.startswith("connect "):
+        parts = c.split()
         node = parts[1]
-        if node not in SITES:
-            return {"action": "print", "payload": f"Unknown node '{node}'"}
-
         mode = DEFAULT_MODES[node]
 
         if "--mode" in parts:
-            idx = parts.index("--mode")
-            if idx + 1 < len(parts):
-                m = parts[idx + 1]
-                if m in MODES:
-                    mode = m
+            m=parts[parts.index("--mode")+1]
+            if m in MODES: mode=m
 
-        return {"action": "load", "node": node, "mode": mode}
+        return ("load",(node,mode))
 
-    if low in SITES:
-        return {"action": "load", "node": low, "mode": DEFAULT_MODES[low]}
+    if c in SITES:
+        return ("load",(c,DEFAULT_MODES[c]))
 
-    return {"action": "print", "payload": f"Unknown command '{cmd}'"}
+    return ("print",f"Unknown command: {cmd}")
 
-# -------------------------------------------------------------
-# SANDBOX IFRAME (dynamic, CSS-driven)
-# -------------------------------------------------------------
-def sandbox_iframe(url, mode):
-    overlay = ""
-    if st.session_state.flux:
-        overlay = "<div class='data-matrix'></div>"
+# ------------------------------------------------------------
+# ASCII RAIN
+# ------------------------------------------------------------
+def ascii_line():
+    chars="01░▒▓█"
+    line="".join(random.choice(chars) for _ in range(70))
+    st.session_state.console.append(line)
+
+# ------------------------------------------------------------
+# IFRAME
+# ------------------------------------------------------------
+def sandbox(url, mode):
 
     klass = {
         "holo": "cyber-holo cyber-holo-active",
         "hardcore": "cyber-hardcore",
         "fullscreen": "",
         "hacker": "hacker-mode",
-        "elite": "hacker-elite-mode",
-    }.get(mode, "cyber-holo")
+        "elite": "hacker-elite-mode"
+    }[mode]
 
-    mode_sound = MODE_SOUNDS.get(mode, MODE_SOUNDS["holo"])
-    random_fx = random.choice(CYBERPACK)
+    overlay = "<div class='data-matrix'></div>" if st.session_state.flux else ""
 
     html = f"""
-    <audio id="modeSound" src="{mode_sound}"></audio>
-    <audio id="warpSound" src="{WARP_SOUND}"></audio>
-    <audio id="fxPack" src="{random_fx}"></audio>
+    <audio id='modeSound' src='{MODE_SOUNDS[mode]}'></audio>
+    <audio id='warpSound' src='{WARP_SOUND}'></audio>
 
-    <div id="sandboxContainer" class="cybersandbox-frame warp-transition {klass}">
+    <div class='cybersandbox-frame warp-transition {klass}'>
         {overlay}
-        <button class="cyber-fullscreen-btn" onclick="toggleFullscreen()">FULLSCREEN</button>
-        <iframe id="sandboxIframe" src="{url}"></iframe>
+        <button class='cyber-fullscreen-btn' onclick='toggleFullscreen()'>FULLSCREEN</button>
+        <iframe id='sandboxIframe' src='{url}'></iframe>
     </div>
 
     <script>
     function resizeIframe(){{
-        const f=document.getElementById("sandboxIframe");
-        const c=document.getElementById("sandboxContainer");
-        let vh=window.innerHeight; 
-        let t=c.getBoundingClientRect().top;
-        let h=vh-t-10;
-        f.style.height=h+"px";
-        c.style.height=h+"px";
+        let f=document.getElementById("sandboxIframe");
+        let c=f.parentElement;
+        let h=window.innerHeight - c.getBoundingClientRect().top - 10;
+        f.style.height=h+"px"; c.style.height=h+"px";
     }}
-    window.addEventListener("load",resizeIframe);
-    window.addEventListener("resize",resizeIframe);
-
+    window.onload=resizeIframe; window.onresize=resizeIframe;
     document.getElementById("modeSound").play();
     document.getElementById("warpSound").play();
-    document.getElementById("fxPack").play();
 
     function toggleFullscreen(){{
-        let el=document.getElementById("sandboxContainer");
+        let el=document.querySelector('.cybersandbox-frame');
         if(!document.fullscreenElement) el.requestFullscreen();
         else document.exitFullscreen();
     }}
     </script>
     """
-    components.html(html, height=0, scrolling=False)
+    components.html(html,height=0)
 
-# -------------------------------------------------------------
-# ORACLE AI
-# -------------------------------------------------------------
-def oracle_ai():
-    st.write("## ORACLE AI — Assistant Neural")
-    q = st.text_input("Question :")
-    if st.button("Interroger"):
-        st.write("Réponse :", q[::-1])  # placeholder
-
-# -------------------------------------------------------------
+# ------------------------------------------------------------
 # FULLWINDOW MODE
-# -------------------------------------------------------------
+# ------------------------------------------------------------
 if st.session_state.fullwindow:
     st.markdown("""
-        <style>
-        .block-container {padding:0!important;}
-        </style>
-        <div class='fw-exit'>
-            <button onclick="window.location.reload()">EXIT</button>
-        </div>
+    <div class='fw-exit'><button onclick="window.location.reload()">EXIT</button></div>
     """, unsafe_allow_html=True)
-    sandbox_iframe(st.session_state.url, "fullscreen")
+    sandbox(st.session_state.url,"fullscreen")
     st.stop()
 
-# -------------------------------------------------------------
-# MAIN UI
-# -------------------------------------------------------------
+# ------------------------------------------------------------
+# UI LAYOUT
+# ------------------------------------------------------------
 st.markdown("<div class='scanlines'></div>", unsafe_allow_html=True)
 
-# APPLY THEME (CSS handles it)
-st.markdown(
-    f"<script>document.body.classList.add('{st.session_state.theme}');</script>",
-    unsafe_allow_html=True
-)
+# THEME
+st.markdown(f"""
+<script>
+document.body.classList.remove('cyan','purple','hacker');
+document.body.classList.add('{st.session_state.theme}');
+</script>
+""",unsafe_allow_html=True)
 
-col_left, col_right = st.columns([2, 1])
+col_left,col_right = st.columns([2,1])
 
-# -------------------------------------------------------------
-# LEFT COLUMN
-# -------------------------------------------------------------
+# ------------------------------------------------------------
+# LEFT : CONSOLE
+# ------------------------------------------------------------
 with col_left:
 
-    tab = st.radio("Navigation", ["Console", "Info", "Oracle AI"], horizontal=True)
+    tab = st.radio("Navigation",["Console","Info","Oracle AI"],horizontal=True)
 
-    # ----------- CONSOLE -----------
-    if tab == "Console":
-        if st.session_state.ascii:
-            append_ascii_line()
+    if tab=="Console":
 
-        console_text = "\n".join(st.session_state.console)
-        st.text_area("", console_text, height=200)
+        if st.session_state.ascii: ascii_line()
+
+        st.text_area("Console", "\n".join(st.session_state.console), height=220)
 
         with st.form("cmd", clear_on_submit=True):
-            cmd = st.text_input(">_ Command")
-            go = st.form_submit_button("EXECUTE")
+            cmd=st.text_input(">_")
+            go=st.form_submit_button("EXECUTE")
 
         if go and cmd:
-            st.session_state.console.append("> " + cmd)
-            result = parse_command(cmd)
+            st.session_state.console.append("> "+cmd)
+            act,pay = parse(cmd)
 
-            if result["action"] == "print":
-                st.session_state.console.append(result["payload"])
-
-            elif result["action"] == "clear":
-                st.session_state.console = ["Console cleared."]
-
-            elif result["action"] == "flux":
-                st.session_state.flux = result["payload"]
-
-            elif result["action"] == "ascii":
-                st.session_state.ascii = result["payload"]
-
-            elif result["action"] == "theme":
-                # save previous theme before hacker
-                if st.session_state.theme not in ["hacker"]:
-                    st.session_state.theme_before_hacker = st.session_state.theme
-                st.session_state.theme = result["payload"]
-
-            elif result["action"] == "exit":
-                st.session_state.fullwindow = False
-
-            elif result["action"] == "fullwindow":
-                node = result["node"]
-                st.session_state.node = node
-                st.session_state.url = SITES[node]["url"]
-                st.session_state.fullwindow = True
-
-            elif result["action"] == "load":
-                node = result["node"]
-                mode = result["mode"]
-
-                # HANDLE GLOBAL HACKER/ELITE THEME
-                if mode in ["hacker", "elite"]:
-                    st.session_state.theme_before_hacker = st.session_state.theme
-                    st.session_state.theme = "hacker"
+            if act=="print": st.session_state.console.append(pay)
+            elif act=="clear": st.session_state.console=["Console cleared."]
+            elif act=="exit": st.session_state.fullwindow=False
+            elif act=="flux": st.session_state.flux=pay
+            elif act=="ascii":st.session_state.ascii=pay
+            elif act=="theme":
+                if st.session_state.theme!="hacker":
+                    st.session_state.theme_before_hacker=st.session_state.theme
+                st.session_state.theme=pay
+            elif act=="fullwindow":
+                st.session_state.node=pay
+                st.session_state.url=SITES[pay]["url"]
+                st.session_state.fullwindow=True
+            elif act=="load":
+                node,mode=pay
+                if mode in ["hacker","elite"]:
+                    st.session_state.theme_before_hacker=st.session_state.theme
+                    st.session_state.theme="hacker"
                 else:
-                    if st.session_state.theme == "hacker":
-                        st.session_state.theme = st.session_state.theme_before_hacker
+                    if st.session_state.theme=="hacker":
+                        st.session_state.theme=st.session_state.theme_before_hacker
 
-                st.session_state.node = node
-                st.session_state.url = SITES[node]["url"]
-                st.session_state.mode = mode
-                st.session_state.console.append(f"Loading {node} in mode {mode}…")
-
+                st.session_state.node=node
+                st.session_state.url=SITES[node]["url"]
+                st.session_state.mode=mode
+                st.session_state.console.append(f"Loading {node} [{mode}]")
             st.rerun()
 
-        sandbox_iframe(st.session_state.url, st.session_state.mode)
+        sandbox(st.session_state.url,st.session_state.mode)
 
-    # ----------- INFO -----------
-    elif tab == "Info":
-        st.write("Node :", st.session_state.node)
-        st.write("Mode :", st.session_state.mode)
-        st.write("URL :", st.session_state.url)
-        st.write("Theme :", st.session_state.theme)
-        st.write("Flux :", st.session_state.flux)
-        st.write("ASCII :", st.session_state.ascii)
+    elif tab=="Info":
+        st.write(st.session_state)
 
-    # ----------- ORACLE AI -----------
-    elif tab == "Oracle AI":
-        oracle_ai()
+    else:
+        q=st.text_input("Question:")
+        if st.button("Ask"):
+            st.write("Response:", q[::-1])
 
-# -------------------------------------------------------------
-# RIGHT COLUMN (Node Cards)
-# -------------------------------------------------------------
+# ------------------------------------------------------------
+# RIGHT : CARDS
+# ------------------------------------------------------------
 with col_right:
-    st.markdown("<div class='right-panel-scroll'>", unsafe_allow_html=True)
+    st.markdown("<div class='right-panel-scroll'>",unsafe_allow_html=True)
 
-    for key, meta in SITES.items():
-        active = " node-active" if key == st.session_state.node else ""
-
-        # NODE CARD
+    for key,meta in SITES.items():
+        active=" node-active" if key==st.session_state.node else ""
         st.markdown(
-            f"""
-            <div class="node-card {active}">
-                <div class="node-title">{meta['label']}</div>
-                <div class="node-url">{meta['url']}</div>
-            </div>
-            """,
+            f"<div class='node-card{active}'><div class='node-title'>{meta['label']}</div><div class='node-url'>{meta['url']}</div></div>",
             unsafe_allow_html=True
         )
 
-        # BUTTON : CONNECT
-        if st.button(f"CONNECT {key}", key=f"{key}_connect"):
-            cmd = f"connect {key} --mode {DEFAULT_MODES[key]}"
-            st.session_state.console.append("> " + cmd)
-            st.session_state.node = key
-            st.session_state.url = meta["url"]
-            st.session_state.mode = DEFAULT_MODES[key]
+        if st.button(f"CONNECT {key}"):
+            st.session_state.node=key
+            st.session_state.url=meta["url"]
+            st.session_state.mode=DEFAULT_MODES[key]
+            st.session_state.console.append(f"> connect {key}")
             st.rerun()
 
-        # BUTTON : FULLWINDOW
-        if st.button(f"FW {key}", key=f"{key}_fw"):
-            st.session_state.console.append(f"> open {key}")
-            st.session_state.node = key
-            st.session_state.url = meta["url"]
-            st.session_state.fullwindow = True
+        if st.button(f"FW {key}"):
+            st.session_state.node=key
+            st.session_state.url=meta["url"]
+            st.session_state.fullwindow=True
             st.rerun()
 
-        # BUTTONS FOR MODES
-        c1, c2, c3, c4, c5 = st.columns(5)
-
-        if c1.button("HOLO", key=f"holo_{key}"):
-            st.session_state.mode = "holo"
-            st.session_state.node = key
-            st.session_state.url = meta["url"]
-            st.session_state.console.append(f"> connect {key} --mode holo")
-            # restore theme if needed
-            if st.session_state.theme == "hacker":
-                st.session_state.theme = st.session_state.theme_before_hacker
+        c1,c2,c3,c4,c5 = st.columns(5)
+        if c1.button("HOLO",key=f"holo_{key}"):
+            st.session_state.node=key; st.session_state.url=meta["url"]; st.session_state.mode="holo"
+            st.rerun()
+        if c2.button("HARD",key=f"hard_{key}"):
+            st.session_state.node=key; st.session_state.url=meta["url"]; st.session_state.mode="hardcore"
+            st.rerun()
+        if c3.button("FULL",key=f"full_{key}"):
+            st.session_state.node=key; st.session_state.url=meta["url"]; st.session_state.mode="fullscreen"
+            st.rerun()
+        if c4.button("HACK",key=f"hacker_{key}"):
+            st.session_state.node=key; st.session_state.url=meta["url"]; st.session_state.mode="hacker"
+            st.session_state.theme_before_hacker=st.session_state.theme
+            st.session_state.theme="hacker"
+            st.rerun()
+        if c5.button("ELITE",key=f"elite_{key}"):
+            st.session_state.node=key; st.session_state.url=meta["url"]; st.session_state.mode="elite"
+            st.session_state.theme_before_hacker=st.session_state.theme
+            st.session_state.theme="hacker"
             st.rerun()
 
-        if c2.button("HARD", key=f"hard_{key}"):
-            st.session_state.mode = "hardcore"
-            st.session_state.node = key
-            st.session_state.url = meta["url"]
-            st.session_state.console.append(f"> connect {key} --mode hardcore")
-            if st.session_state.theme == "hacker":
-                st.session_state.theme = st.session_state.theme_before_hacker
-            st.rerun()
-
-        if c3.button("FULL", key=f"full_{key}"):
-            st.session_state.mode = "fullscreen"
-            st.session_state.node = key
-            st.session_state.url = meta["url"]
-            st.session_state.console.append(f"> connect {key} --mode fullscreen")
-            if st.session_state.theme == "hacker":
-                st.session_state.theme = st.session_state.theme_before_hacker
-            st.rerun()
-
-        if c4.button("HACK", key=f"hacker_{key}"):
-            st.session_state.mode = "hacker"
-            st.session_state.node = key
-            st.session_state.url = meta["url"]
-            st.session_state.console.append(f"> connect {key} --mode hacker")
-            st.session_state.theme_before_hacker = st.session_state.theme
-            st.session_state.theme = "hacker"
-            st.rerun()
-
-        if c5.button("ELITE", key=f"elite_{key}"):
-            st.session_state.mode = "elite"
-            st.session_state.node = key
-            st.session_state.url = meta["url"]
-            st.session_state.console.append(f"> connect {key} --mode elite")
-            st.session_state.theme_before_hacker = st.session_state.theme
-            st.session_state.theme = "hacker"
-            st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>",unsafe_allow_html=True)
