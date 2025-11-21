@@ -1,24 +1,20 @@
 /* ============================================================
-   BASE CYBERPUNK SANDBOX FRAME
+   GLOBAL
    ============================================================ */
 
-.cybersandbox-frame {
-    position: relative;
-    border-radius: 18px;
-    overflow: hidden;
-    margin-top: 20px;
-    border: 2px solid rgba(0, 246, 255, 0.9);
-    box-shadow: 0 0 25px rgba(0, 246, 255, 0.4),
-                inset 0 0 18px rgba(255, 0, 212, 0.2);
-    background: #000;
+body, .stApp {
+    background: radial-gradient(circle at top, #151530 0, #050509 55%, #000);
+    color: #00f6ff;
+    font-family: "Roboto Mono", monospace;
 }
 
-/* scanlines / CRT effect */
-.cybersandbox-frame::before {
-    content: "";
-    position: absolute;
-    inset: 0;
+#MainMenu, footer, header { visibility: hidden; }
+
+/* Scanlines overlay */
+.scanlines {
     pointer-events: none;
+    position: fixed;
+    inset: 0;
     background: repeating-linear-gradient(
         to bottom,
         rgba(255,255,255,0.04) 0px,
@@ -26,114 +22,241 @@
         rgba(0,0,0,0.05) 2px
     );
     mix-blend-mode: soft-light;
-    opacity: 0.25;
-    z-index: 10;
-}
-
-.cybersandbox-frame iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    z-index: 5;
-    position: relative;
+    opacity: 0.2;
+    z-index: 999;
 }
 
 /* ============================================================
-   MODE A — HOLOGRAMME LÉGER
+   RIGHT PANEL SCROLLABLE
    ============================================================ */
-
-.cyber-holo {
-    filter: drop-shadow(0 0 8px #00f6ff) brightness(1.1);
-    backdrop-filter: blur(2px);
-    opacity: 0.92;
-}
-
-@keyframes holoPulse {
-    0% { filter: drop-shadow(0 0 8px #00f6ff); }
-    50% { filter: drop-shadow(0 0 16px #ff00de); }
-    100% { filter: drop-shadow(0 0 8px #00f6ff); }
-}
-
-.cyber-holo-active {
-    animation: holoPulse 3.8s infinite ease-in-out;
-}
-
-/* ============================================================
-   MODE B — HARDCORE CYBERPUNK (Glitch + RGB Split + distortion)
-   ============================================================ */
-
-@keyframes glitch {
-    0% { transform: translate(0); }
-    20% { transform: translate(-3px, 2px); }
-    40% { transform: translate(3px, -2px); }
-    60% { transform: translate(-2px, 1px); }
-    80% { transform: translate(2px, -1px); }
-    100% { transform: translate(0); }
-}
-
-@keyframes rgbSplit {
-    0%, 100% { filter: none; }
-    25% { filter: url('#rgb-split'); }
-    50% { filter: hue-rotate(20deg) saturate(1.5); }
-    75% { filter: url('#rgb-split') brightness(1.2); }
-}
-
-.cyber-hardcore {
-    animation: glitch 0.35s infinite steps(2, end),
-               rgbSplit 1.8s infinite ease-in-out;
-    backdrop-filter: brightness(0.9) contrast(1.3);
-    opacity: 0.95;
-}
-
-/* ============================================================
-   MODE C — FULLSCREEN API
-   ============================================================ */
-
-.cyber-fullscreen-btn {
-    position: absolute;
-    right: 20px;
-    top: 14px;
-    z-index: 30;
-    padding: 6px 12px;
-    background: rgba(0, 246, 255, 0.3);
-    border: 1px solid #00f6ff;
-    border-radius: 8px;
-    cursor: pointer;
-    color: #00f6ff;
-    font-family: "Roboto Mono", monospace;
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-}
-
-.cybersandbox-frame.fullscreen {
-    position: fixed !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    border-radius: 0 !important;
-    z-index: 999999 !important;
-}
-
-/* =========================================
-   COLONNE DROITE SCROLLABLE INDEPENDANTE
-   ========================================= */
 
 .right-panel-scroll {
     max-height: calc(100vh - 20px);
     overflow-y: auto;
     padding-right: 8px;
 }
-
-.right-panel-scroll::-webkit-scrollbar {
-    width: 6px;
-}
-
+.right-panel-scroll::-webkit-scrollbar { width: 6px; }
 .right-panel-scroll::-webkit-scrollbar-thumb {
     background: #00f6ff;
     border-radius: 6px;
 }
-
 .right-panel-scroll::-webkit-scrollbar-track {
     background: rgba(255,255,255,0.05);
+}
+
+/* ============================================================
+   INTRO CINEMATIQUE
+   ============================================================ */
+
+#introScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    background: black;
+    color: #00f6ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    animation: introFade 1s ease-out forwards;
+    animation-delay: 3.2s;
+}
+
+@keyframes introFade {
+    to { opacity: 0; visibility: hidden; }
+}
+
+.introText {
+    font-size: 1.4rem;
+    opacity: 0;
+    animation: introTextAnim 3s ease-out forwards;
+}
+
+@keyframes introTextAnim {
+    0% { opacity:0; transform:scale(1.05); filter:blur(3px); }
+    40% { opacity:1; transform:scale(1); filter:blur(0); }
+    90% { opacity:1; }
+    100% { opacity:0; }
+}
+
+/* ============================================================
+   CONSOLE HEADER
+   ============================================================ */
+
+.console-header {
+    border: 1px solid #00f6ff;
+    padding: 12px;
+    margin-bottom: 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(0,246,255,0.04), rgba(255,0,221,0.06));
+    box-shadow: 0 0 16px rgba(0,246,255,0.4);
+}
+.console-title {
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 1.1rem;
+}
+.console-subtitle {
+    font-size: 0.8rem;
+    color: #ff53d3;
+    margin-top: 4px;
+}
+
+/* ============================================================
+   NODES / PANELS
+   ============================================================ */
+
+.panel {
+    border: 1px solid rgba(0,246,255,0.5);
+    padding: 12px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(0,246,255,0.05), rgba(255,0,212,0.08));
+    margin-bottom: 10px;
+}
+
+.node-card {
+    border: 1px solid rgba(0,246,255,0.4);
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 0 12px rgba(0,246,255,0.2);
+    background: radial-gradient(circle at top, rgba(0,246,255,0.07), rgba(0,0,0,0.9));
+}
+.node-card.node-active {
+    border-color: #ff53d3;
+    box-shadow: 0 0 18px rgba(255,83,211,0.7);
+}
+
+.node-title {
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+}
+.node-url { font-size: 0.75rem; opacity: 0.7; }
+.node-command span { color: #ff53d3; }
+
+.node-button {
+    margin-top: 8px;
+    display: inline-block;
+    padding: 6px 12px;
+    border: 1px solid #00f6ff;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #00f6ff;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+}
+.node-button:hover {
+    border-color: #ff53d3;
+    box-shadow: 0 0 12px rgba(255,83,211,0.8);
+}
+
+/* ============================================================
+   SANDBOX IFRAME CYBERPUNK
+   ============================================================ */
+
+.cybersandbox-frame {
+    position: relative;
+    width: 100%;
+    border-radius: 18px;
+    border: 2px solid rgba(0,246,255,0.9);
+    background: #000;
+    overflow: hidden;
+    box-shadow: 0 0 25px rgba(0,246,255,0.4),
+                inset 0 0 18px rgba(255,0,212,0.2);
+}
+
+.cybersandbox-frame::before {
+    content: "";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.04) 0px,
+        rgba(255,255,255,0.04) 1px,
+        rgba(0,0,0,0.05) 2px
+    );
+    opacity: .25;
+    mix-blend-mode: soft-light;
+    z-index: 10;
+}
+
+.cybersandbox-frame iframe {
+    width:100%;
+    border: none;
+    position: relative;
+    z-index: 5;
+}
+
+/* ============================================================
+   WARP TRANSITION (Animation changement de nœud)
+   ============================================================ */
+
+.warp-transition {
+    animation: cyberWarp 0.6s ease-out;
+}
+@keyframes cyberWarp {
+    0% { opacity:0; filter:blur(8px) brightness(0.4); transform:scale(1.05); }
+    40% { opacity:1; filter:blur(2px) brightness(1.4); transform:scale(1.02); }
+    100% { opacity:1; filter:none; transform:scale(1); }
+}
+
+/* ============================================================
+   MODES VISUELS
+   ============================================================ */
+
+/* HOLO */
+.cyber-holo { filter: drop-shadow(0 0 8px #00f6ff) brightness(1.15); backdrop-filter: blur(2px); opacity:.92; }
+.cyber-holo-active { animation: holoPulse 3.8s infinite ease-in-out; }
+@keyframes holoPulse {
+    0% { filter:drop-shadow(0 0 8px #00f6ff); }
+    50% { filter:drop-shadow(0 0 16px #ff00de); }
+    100% { filter:drop-shadow(0 0 8px #00f6ff); }
+}
+
+/* HARDCORE */
+.cyber-hardcore {
+    animation: glitch .35s infinite steps(2,end),
+               rgbSplit 1.8s infinite ease-in-out;
+    backdrop-filter: brightness(0.9) contrast(1.3);
+    opacity: 0.95;
+}
+@keyframes glitch {
+    0% { transform:translate(0); }
+    20%{ transform:translate(-3px,2px);}
+    40%{ transform:translate(3px,-2px);}
+    60%{ transform:translate(-2px,1px);}
+    80%{ transform:translate(2px,-1px);}
+    100%{ transform:translate(0);}
+}
+@keyframes rgbSplit {
+    0%,100%{ filter:none;}
+    25%{ filter:url('#rgb-split'); }
+    50%{ filter:hue-rotate(20deg) saturate(1.5); }
+    75%{ filter:url('#rgb-split') brightness(1.2); }
+}
+
+/* FULLSCREEN BTN */
+.cyber-fullscreen-btn {
+    position:absolute;
+    top:14px;
+    right:15px;
+    padding:6px 12px;
+    background:rgba(0,246,255,0.3);
+    border:1px solid #00f6ff;
+    border-radius:8px;
+    color:#00f6ff;
+    cursor:pointer;
+    font-size:0.75rem;
+    letter-spacing:0.1em;
+}
+
+/* FULLSCREEN MODE */
+.cybersandbox-frame.fullscreen {
+    position:fixed !important;
+    inset:0 !important;
+    width:100% !important;
+    height:100% !important;
+    border-radius:0 !important;
+    z-index:999999 !important;
 }
