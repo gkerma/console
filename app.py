@@ -14,27 +14,27 @@ st.set_page_config(
 SITES = {
     "game": {
         "label": "GAME // Arcade dimensionnelle",
-        "url": "https://game.maegia.tv",
+        "url": "https://game.maegia.tv/?embed=true&embed_options=dark_theme&embed_options=disable_scrolling",
         "code": "connect game",
     },
     "kragzouy": {
         "label": "KRAGZOUY // Zone expérimentale",
-        "url": "https://kragzouy.maegia.tv",
+        "url": "https://kragzouy.maegia.tv/?embed=true&embed_options=dark_theme&embed_options=disable_scrolling",
         "code": "connect kragzouy",
     },
     "oracle": {
         "label": "ORACLE // Divination système",
-        "url": "https://oracle.maegia.tv",
+        "url": "https://oracle.maegia.tv/?embed=true&embed_options=dark_theme&embed_options=disable_scrolling",
         "code": "connect oracle",
     },
     "pali": {
         "label": "PALI // Protocoles linguistiques",
-        "url": "https://pali.maegia.tv",
+        "url": "https://pali.maegia.tv/?embed=true&embed_options=dark_theme&embed_options=disable_scrolling",
         "code": "connect pali",
     },
     "cybermind": {
         "label": "CYBERMIND // Nœud central",
-        "url": "https://cybermind.fr",
+        "url": "https://cybermind.fr",  # EXTERNE → pas de embed=true
         "code": "connect cybermind",
     },
 }
