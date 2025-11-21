@@ -2,6 +2,7 @@
 import streamlit as st
 from pathlib import Path
 from textwrap import dedent
+import streamlit.components.v1 as components
 
 # ---------- CONFIG GLOBALE ----------
 st.set_page_config(
@@ -46,14 +47,14 @@ def load_css():
         st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
 
 
-# ---------- LOGIQUE CONSOLE ----------
+# ---------- TEXTES AIDE / LISTE ----------
 def help_text() -> str:
     lines = [
         "COMMANDES DISPONIBLES:",
         "  help              → affiche cette aide",
         "  list              → liste des nœuds disponibles",
         "  clear             → efface l'écran",
-        "  connect <noeud>   → ouvre un portail vers un nœud",
+        "  connect <noeud>   → charge un nœud dans la fenêtre centrale",
         "",
         "NŒUDS:",
     ]
@@ -69,6 +70,7 @@ def list_nodes() -> str:
     return "\n".join(lines)
 
 
+# ---------- PARSEUR DE COMMANDE ----------
 def parse_command(cmd: str):
     cmd = cmd.strip()
     if not cmd:
@@ -93,7 +95,7 @@ def parse_command(cmd: str):
         target = lower.split(" ", 1)[1].strip()
         if target in SITES:
             return {
-                "action": "redirect",
+                "action": "load_frame",
                 "target": target,
                 "url": SITES[target]["url"],
             }
@@ -106,12 +108,12 @@ def parse_command(cmd: str):
     # commande brute = nom de nœud (ex: game)
     if lower in SITES:
         return {
-            "action": "redirect",
+            "action": "load_frame",
             "target": lower,
             "url": SITES[lower]["url"],
         }
 
-    # par défaut: commande inconnue
+    # commande inconnue
     return {
         "action": "print",
         "payload": f"COMMANDE INVALIDE: '{cmd}'\nTapez 'help' pour la liste des commandes.",
@@ -123,6 +125,10 @@ if "console_log" not in st.session_state:
     st.session_state.console_log = []
 if "last_command" not in st.session_state:
     st.session_state.last_command = ""
+if "current_node" not in st.session_state:
+    st.session_state.current_node = None
+if "current_url" not in st.session_state:
+    st.session_state.current_url = None
 
 
 def append_log(line: str):
@@ -138,6 +144,7 @@ def main():
 
     col_left, col_right = st.columns([2, 1])
 
+    # --------- COLONNE GAUCHE : CONSOLE + IFRAME ---------
     with col_left:
         st.markdown(
             """
@@ -149,25 +156,25 @@ def main():
             unsafe_allow_html=True,
         )
 
-        # Zone console
+        # Coquille console
         st.markdown('<div class="console-shell">', unsafe_allow_html=True)
 
         # Affichage du log
-        console_text = ""
-        if st.session_state.console_log:
-            console_text = "\n".join(st.session_state.console_log)
-        else:
-            console_text = dedent(
+        console_text = (
+            "\n".join(st.session_state.console_log)
+            if st.session_state.console_log
+            else dedent(
                 """\
                 Initialisation système…
                 Tapez 'help' pour afficher la liste des commandes.
                 """
             )
+        )
 
         st.text_area(
             label="",
             value=console_text,
-            height=260,
+            height=220,
             key="console_output",
         )
 
@@ -191,26 +198,48 @@ def main():
                 st.session_state.console_log = []
                 append_log("Console effacée. Tapez 'help' pour commencer.")
 
-            elif result["action"] == "redirect":
+            elif result["action"] == "load_frame":
                 target = result["target"]
                 url = result["url"]
-                append_log(f"Ouverture du portail vers '{target}' → {url}")
-                # Affichage du lien cliquable + redirection automatique via meta-refresh
-                st.markdown(
-                    f"""
-                    <meta http-equiv="refresh" content="0; url={url}">
-                    <p class="redirect-msg">
-                      Redirection vers <a href="{url}" target="_self">{url}</a>…
-                    </p>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            # Force refresh de l'affichage
+                st.session_state.current_node = target
+                st.session_state.current_url = url
+                append_log(f"Chargement du nœud '{target}' dans la fenêtre centrale → {url}")
+
+            # rafraîchit pour mettre à jour le iframe
             st.experimental_rerun()
 
         st.markdown("</div>", unsafe_allow_html=True)  # fin console-shell
 
-    # --------- PANNEAU DROIT: CARDS DES NŒUDS ---------
+        # --------- IFRAME CENTRALE ---------
+        if st.session_state.current_url:
+            node_label = SITES[st.session_state.current_node]["label"]
+            st.markdown(
+                f"""
+                <div class="panel panel-inline">
+                  <div class="panel-title">Fenêtre centrale</div>
+                  <div class="panel-subtitle">Nœud actif: {node_label}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            # IFRAME avec le site
+            components.iframe(
+                st.session_state.current_url,
+                height=600,
+            )
+        else:
+            st.markdown(
+                """
+                <div class="panel panel-inline">
+                  <div class="panel-title">Fenêtre centrale</div>
+                  <div class="panel-subtitle">Aucun nœud chargé. Tapez 'connect game' par exemple.</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    # --------- COLONNE DROITE: CARDS DES NŒUDS ----------
     with col_right:
         st.markdown(
             """
@@ -223,14 +252,15 @@ def main():
         )
 
         for key, meta in SITES.items():
+            active_class = " node-active" if st.session_state.current_node == key else ""
             st.markdown(
                 f"""
-                <div class="node-card">
+                <div class="node-card{active_class}">
                   <div class="node-title">{meta['label']}</div>
                   <div class="node-url">{meta['url']}</div>
                   <div class="node-command">Commande: <span>{meta['code']}</span></div>
                   <a class="node-button" href="{meta['url']}" target="_blank">
-                    OUVRIR LE NŒUD
+                    OUVRIR DANS UN ONGLET
                   </a>
                 </div>
                 """,
