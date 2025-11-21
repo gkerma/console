@@ -1,15 +1,29 @@
-# app.py
 import streamlit as st
+import streamlit.components.v1 as components
 from pathlib import Path
 from textwrap import dedent
-import streamlit.components.v1 as components
 
-# ---------- CONFIG GLOBALE ----------
 st.set_page_config(
     page_title="Maegia Cyber Console",
     page_icon="⬢",
     layout="wide",
 )
+
+# ============================================================
+# CONFIG MODES PAR DÉFAUT
+# ============================================================
+
+DEFAULT_MODES = {
+    "game": "hardcore",
+    "kragzouy": "holo",
+    "oracle": "holo",
+    "pali": "hardcore",
+    "cybermind": "fullscreen",
+}
+
+# ============================================================
+# SITES AVEC URL EMBED
+# ============================================================
 
 SITES = {
     "game": {
@@ -34,43 +48,65 @@ SITES = {
     },
     "cybermind": {
         "label": "CYBERMIND // Nœud central",
-        "url": "https://cybermind.fr",  # EXTERNE → pas de embed=true
+        "url": "https://cybermind.fr",
         "code": "connect cybermind",
     },
 }
 
+# ============================================================
+# CSS LOADER
+# ============================================================
 
-# ---------- CSS CUSTOM ----------
 def load_css():
     css_path = Path("style.css")
     if css_path.exists():
         st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
 
 
-# ---------- TEXTES AIDE / LISTE ----------
-def help_text() -> str:
-    lines = [
-        "COMMANDES DISPONIBLES:",
-        "  help              → affiche cette aide",
-        "  list              → liste des nœuds disponibles",
-        "  clear             → efface l'écran",
-        "  connect <noeud>   → charge un nœud dans la fenêtre centrale",
-        "",
-        "NŒUDS:",
-    ]
-    for key, meta in SITES.items():
-        lines.append(f"  {meta['code']:<20} → {meta['url']}")
-    return "\n".join(lines)
+# ============================================================
+# MESSAGE AIDE
+# ============================================================
 
+def help_text() -> str:
+    return dedent("""
+    COMMANDES DISPONIBLES :
+
+      help                     → affiche cette aide
+      list                     → liste des nœuds disponibles
+      clear                    → efface la console
+
+      connect <noeud>          → ouvre un nœud
+      connect <noeud> --mode X → ouvre un nœud avec le mode visuel
+
+    MODES VISUELS DISPONIBLES :
+
+      holo        → hologramme léger
+      hardcore    → glitch, RGB, distortion
+      fullscreen  → plein écran API
+
+    EXEMPLES :
+      connect oracle
+      connect oracle --mode hardcore
+      connect game --mode holo
+
+    """)
+
+
+# ============================================================
+# LISTE DES NŒUDS
+# ============================================================
 
 def list_nodes() -> str:
-    lines = ["NŒUDS DISPONIBLES:"]
+    lines = ["NŒUDS DISPONIBLES :"]
     for key, meta in SITES.items():
         lines.append(f"  - {key:10} → {meta['url']}  :: {meta['label']}")
     return "\n".join(lines)
 
 
-# ---------- PARSEUR DE COMMANDE ----------
+# ============================================================
+# PARSEUR DE COMMANDE
+# ============================================================
+
 def parse_command(cmd: str):
     cmd = cmd.strip()
     if not cmd:
@@ -78,203 +114,227 @@ def parse_command(cmd: str):
 
     lower = cmd.lower()
 
-    # help
     if lower in ["help", "?", "man"]:
         return {"action": "print", "payload": help_text()}
 
-    # clear
     if lower in ["clear", "cls", "reset"]:
         return {"action": "clear"}
 
-    # list
     if lower in ["list", "ls", "nodes"]:
         return {"action": "print", "payload": list_nodes()}
 
-    # connect <node>
+    # CONNECT + optional mode
     if lower.startswith("connect "):
-        target = lower.split(" ", 1)[1].strip()
-        if target in SITES:
+        parts = lower.split()
+
+        if len(parts) >= 2:
+            target = parts[1]
+
+            if target not in SITES:
+                return {
+                    "action": "print",
+                    "payload": f"ERREUR : nœud inconnu '{target}'"
+                }
+
+            # MODE PERSONNALISÉ
+            mode = DEFAULT_MODES.get(target, "holo")
+
+            if "--mode" in parts:
+                mode_index = parts.index("--mode")
+                if len(parts) > mode_index + 1:
+                    mode = parts[mode_index + 1]
+
             return {
                 "action": "load_frame",
                 "target": target,
                 "url": SITES[target]["url"],
-            }
-        else:
-            return {
-                "action": "print",
-                "payload": f"ERREUR: nœud inconnu '{target}'. Tapez 'list' pour voir les nœuds disponibles.",
+                "mode": mode,
             }
 
-    # commande brute = nom de nœud (ex: game)
+    # COMMANDES COURTES (ex : game)
     if lower in SITES:
+        target = lower
+        mode = DEFAULT_MODES[target]
         return {
             "action": "load_frame",
-            "target": lower,
-            "url": SITES[lower]["url"],
+            "target": target,
+            "url": SITES[target]["url"],
+            "mode": mode,
         }
 
-    # commande inconnue
     return {
         "action": "print",
-        "payload": f"COMMANDE INVALIDE: '{cmd}'\nTapez 'help' pour la liste des commandes.",
+        "payload": f"COMMANDE INVALIDE : '{cmd}'\nTape 'help' pour les commandes."
     }
 
 
-# ---------- INIT SESSION ----------
+# ============================================================
+# SANDBOX EMBED + MODES VISUELS + SON
+# ============================================================
+
+def sandbox_iframe(url: str, mode="holo", height: int = 750):
+    mode_class = {
+        "holo": "cyber-holo cyber-holo-active",
+        "hardcore": "cyber-hardcore",
+        "fullscreen": ""
+    }.get(mode, "cyber-holo")
+
+    html = f"""
+    <svg width="0" height="0">
+      <filter id="rgb-split">
+        <feColorMatrix in="SourceGraphic" type="matrix"
+          values="1 0 0 0 0
+                  0 0 0 0 0
+                  0 0 0 0 0
+                  0 0 0 1 0"/>
+        <feOffset dx="-2" dy="0" result="r" />
+        <feColorMatrix in="SourceGraphic" type="matrix"
+          values="0 0 0 0 0
+                  0 1 0 0 0
+                  0 0 0 0 0
+                  0 0 0 1 0"/>
+        <feOffset dx="2" dy="0" result="g" />
+        <feBlend in="r" in2="g" mode="screen" />
+      </filter>
+    </svg>
+
+    <audio id="modeSound" src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3"></audio>
+
+    <div class="cybersandbox-frame {mode_class}" id="sandboxFrame" style="height:{height}px;">
+        <button class="cyber-fullscreen-btn" onclick="toggleFullscreen()">FULLSCREEN</button>
+        <iframe id="sandboxIframe" src="{url}"></iframe>
+    </div>
+
+    <script>
+    function toggleFullscreen() {{
+        var frame = document.getElementById("sandboxFrame");
+        if (!document.fullscreenElement) {{
+            frame.requestFullscreen();
+        }} else {{
+            document.exitFullscreen();
+        }}
+    }}
+
+    document.getElementById("modeSound").play();
+    </script>
+    """
+
+    components.html(html, height=height+60, scrolling=False)
+
+
+# ============================================================
+# INITIALISATION SESSION
+# ============================================================
+
 if "console_log" not in st.session_state:
     st.session_state.console_log = [
         "Initialisation système…",
-        "Nœud par défaut chargé : CYBERMIND → https://cybermind.fr",
-        "Tapez 'help' pour afficher la liste des commandes.",
+        "Nœud par défaut chargé : CYBERMIND",
+        "Tape 'help' pour afficher les commandes.",
     ]
 
-if "last_command" not in st.session_state:
-    st.session_state.last_command = ""
-
-# NŒUD CHARGÉ PAR DÉFAUT : CYBERMIND
 if "current_node" not in st.session_state:
     st.session_state.current_node = "cybermind"
 
 if "current_url" not in st.session_state:
     st.session_state.current_url = SITES["cybermind"]["url"]
 
+if "current_mode" not in st.session_state:
+    st.session_state.current_mode = DEFAULT_MODES["cybermind"]
 
-def append_log(line: str):
-    st.session_state.console_log.append(line)
+
+# ============================================================
+# UI PRINCIPALE
+# ============================================================
+
+load_css()
+
+st.markdown('<div class="scanlines"></div>', unsafe_allow_html=True)
+
+col_left, col_right = st.columns([2, 1])
+
+with col_left:
+
+    st.markdown("""
+        <div class="console-header">
+            <div class="console-title">MAEGIA // CYBER CONSOLE</div>
+            <div class="console-subtitle">Nœud d’accès aux instances distantes</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Console
+    console_text = "\n".join(st.session_state.console_log)
+
+    st.text_area("", console_text, height=210, key="console_output")
+
+    with st.form("command_form", clear_on_submit=True):
+        cmd = st.text_input(">_ COMMANDE", "")
+        submitted = st.form_submit_button("EXECUTER")
+
+    if submitted and cmd:
+        st.session_state.console_log.append("> " + cmd)
+        result = parse_command(cmd)
+
+        if result["action"] == "print":
+            st.session_state.console_log.append(result["payload"])
+
+        elif result["action"] == "clear":
+            st.session_state.console_log = [
+                "Console effacée.",
+                "Tape 'help' pour recommencer."
+            ]
+
+        elif result["action"] == "load_frame":
+            st.session_state.current_node = result["target"]
+            st.session_state.current_url = result["url"]
+            st.session_state.current_mode = result["mode"]
+
+            st.session_state.console_log.append(
+                f"Chargement du nœud '{result['target']}' en mode {result['mode']} → {result['url']}"
+            )
+
+        st.rerun()
+
+    # AFFICHAGE IFRAME
+    st.markdown(
+        f"""
+        <div class="panel panel-inline">
+            <div class="panel-title">Fenêtre centrale</div>
+            <div class="panel-subtitle">Nœud actif : {SITES[st.session_state.current_node]['label']}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    sandbox_iframe(
+        st.session_state.current_url,
+        mode=st.session_state.current_mode,
+        height=750
+    )
 
 
-# ---------- UI PRINCIPALE ----------
-def main():
-    load_css()
+# ============================================================
+# COLONNE DROITE (cartes nœuds)
+# ============================================================
 
-    # Overlay scanlines
-    st.markdown('<div class="scanlines"></div>', unsafe_allow_html=True)
+with col_right:
+    st.markdown("""
+    <div class="panel">
+        <div class="panel-title">Nœuds Maegia</div>
+        <div class="panel-subtitle">Accès direct</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    col_left, col_right = st.columns([2, 1])
-
-    # --------- COLONNE GAUCHE : CONSOLE + IFRAME ---------
-    with col_left:
+    for key, meta in SITES.items():
+        active_class = " node-active" if st.session_state.current_node == key else ""
         st.markdown(
-            """
-            <div class="console-header">
-              <div class="console-title">MAEGIA // CYBER CONSOLE</div>
-              <div class="console-subtitle">Nœud d’accès aux instances distantes</div>
+            f"""
+            <div class="node-card{active_class}">
+              <div class="node-title">{meta['label']}</div>
+              <div class="node-url">{meta['url']}</div>
+              <div class="node-command">Commande: <span>{meta['code']}</span></div>
+              <a class="node-button" href="{meta['url']}" target="_blank">OUVRIR DIRECT</a>
             </div>
             """,
             unsafe_allow_html=True,
         )
-
-        # Coquille console
-        st.markdown('<div class="console-shell">', unsafe_allow_html=True)
-
-        # Affichage du log
-        console_text = (
-            "\n".join(st.session_state.console_log)
-            if st.session_state.console_log
-            else dedent(
-                """\
-                Initialisation système…
-                Tapez 'help' pour afficher la liste des commandes.
-                """
-            )
-        )
-
-        st.text_area(
-            label="",
-            value=console_text,
-            height=220,
-            key="console_output",
-        )
-
-        # Entrée commande
-        with st.form("command_form", clear_on_submit=True):
-            cmd = st.text_input(
-                label=">_ COMMANDE",
-                placeholder="ex: connect game, help, list, clear…",
-            )
-            submitted = st.form_submit_button("EXECUTER")
-
-        if submitted and cmd:
-            st.session_state.last_command = cmd
-            append_log(f"> {cmd}")
-            result = parse_command(cmd)
-
-            if result["action"] == "print":
-                append_log(result["payload"])
-
-            elif result["action"] == "clear":
-                st.session_state.console_log = []
-                append_log("Console effacée. Tapez 'help' pour commencer.")
-
-            elif result["action"] == "load_frame":
-                target = result["target"]
-                url = result["url"]
-                st.session_state.current_node = target
-                st.session_state.current_url = url
-                append_log(f"Chargement du nœud '{target}' dans la fenêtre centrale → {url}")
-
-            # rafraîchit pour mettre à jour le iframe
-            st.rerun()
-
-        st.markdown("</div>", unsafe_allow_html=True)  # fin console-shell
-
-        # --------- IFRAME CENTRALE ---------
-        if st.session_state.current_url:
-            node_label = SITES[st.session_state.current_node]["label"]
-            st.markdown(
-                f"""
-                <div class="panel panel-inline">
-                  <div class="panel-title">Fenêtre centrale</div>
-                  <div class="panel-subtitle">Nœud actif: {node_label}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            # IFRAME avec le site
-            components.iframe(
-                st.session_state.current_url,
-                height=600,
-            )
-        else:
-            st.markdown(
-                """
-                <div class="panel panel-inline">
-                  <div class="panel-title">Fenêtre centrale</div>
-                  <div class="panel-subtitle">Aucun nœud chargé. Tapez 'connect game' par exemple.</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-    # --------- COLONNE DROITE: CARDS DES NŒUDS ----------
-    with col_right:
-        st.markdown(
-            """
-            <div class="panel">
-              <div class="panel-title">Nœuds Maegia</div>
-              <div class="panel-subtitle">Accès direct</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        for key, meta in SITES.items():
-            active_class = " node-active" if st.session_state.current_node == key else ""
-            st.markdown(
-                f"""
-                <div class="node-card{active_class}">
-                  <div class="node-title">{meta['label']}</div>
-                  <div class="node-url">{meta['url']}</div>
-                  <div class="node-command">Commande: <span>{meta['code']}</span></div>
-                  <a class="node-button" href="{meta['url']}" target="_blank">
-                    OUVRIR DANS UN ONGLET
-                  </a>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-
-if __name__ == "__main__":
-    main()
