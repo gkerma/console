@@ -14,7 +14,10 @@ st.set_page_config(page_title="MAEGIA Console", layout="wide", page_icon="⬢")
 # LOAD CSS
 # ------------------------------------------------------------
 if Path("style.css").exists():
-    st.markdown(f"<style>{Path('style.css').read_text()}</style>", unsafe_allow_html=True)
+    st.markdown(
+        f"<style>{Path('style.css').read_text()}</style>",
+        unsafe_allow_html=True
+    )
 
 # ------------------------------------------------------------
 # NODE DEFINITIONS
@@ -142,41 +145,51 @@ def sandbox(node: str, mode: str):
         except Exception as e:
             snapshot = f"<p style='color:red;'>Mirror error: {e}</p>"
 
-        components.html(f"""
-        <div class='sandbox-frame mode-{mode}'>{snapshot}</div>
-        """, height=800, scrolling=True)
+        components.html(
+            f"""
+            <div class='sandbox-frame mode-{mode}'>{snapshot}</div>
+            """,
+            height=800,
+            scrolling=True
+        )
         return
 
     # 2) IFRAME for standard HTML websites
-    components.html(f"""
-    <div class='sandbox-frame mode-{mode}' id='sandboxContainer'>
-        <iframe id='sandboxIframe' src='{url}'></iframe>
-    </div>
-    <script>
-    function resizeIframe() {{
-        const f = document.getElementById('sandboxIframe');
-        const c = document.getElementById('sandboxContainer');
-        if (!f || !c) return;
-        const top = c.getBoundingClientRect().top;
-        const h = window.innerHeight - top - 30;
-        f.style.height = h + 'px';
-        c.style.height = h + 'px';
-    }}
-    resizeIframe();
-    setTimeout(resizeIframe, 150);
-    window.addEventListener('resize', resizeIframe);
-    </script>
-    """, height=0)
+    components.html(
+        f"""
+        <div class='sandbox-frame mode-{mode}' id='sandboxContainer'>
+            <iframe id='sandboxIframe' src='{url}'></iframe>
+        </div>
+        <script>
+        function resizeIframe() {{
+            const f = document.getElementById('sandboxIframe');
+            const c = document.getElementById('sandboxContainer');
+            if (!f || !c) return;
+            const top = c.getBoundingClientRect().top;
+            const h = window.innerHeight - top - 30;
+            f.style.height = h + 'px';
+            c.style.height = h + 'px';
+        }}
+        resizeIframe();
+        setTimeout(resizeIframe, 150);
+        window.addEventListener('resize', resizeIframe);
+        </script>
+        """,
+        height=0
+    )
 
 # ------------------------------------------------------------
 # APPLY THEME
 # ------------------------------------------------------------
-st.markdown(f"""
+st.markdown(
+    f"""
 <script>
 document.body.classList.remove('cyan','purple','hacker');
 document.body.classList.add('{st.session_state.theme}');
 </script>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True
+)
 
 # ------------------------------------------------------------
 # LAYOUT 3 COLONNES
@@ -220,8 +233,42 @@ with col_console:
 # SANDBOX CENTER
 # ------------------------------------------------------------
 with col_sandbox:
-    st.markdown(f"### Sandbox — {NODES
-        # --- COMPLETE BUTTON ACTIONS ---
+    st.markdown(f"### Sandbox — {NODES[st.session_state.node]['label']}")
+    sandbox(st.session_state.node, st.session_state.mode)
+
+# ------------------------------------------------------------
+# NODES RIGHT
+# ------------------------------------------------------------
+with col_nodes:
+    st.markdown("### Nodes")
+
+    for key, meta in NODES.items():
+        active = " node-active" if key == st.session_state.node else ""
+
+        st.markdown(
+            f"<div class='node-card{active}'>"
+            f"<div class='node-title'>{meta['label']}</div>"
+            f"<div class='node-url'>{meta['url']}</div></div>",
+            unsafe_allow_html=True
+        )
+
+        if st.button(f"CONNECT {key}"):
+            st.session_state.node = key
+            st.session_state.mode = DEFAULT_MODE[key]
+            st.rerun()
+
+        c1, c2, c3, c4 = st.columns(4)
+
+        if c1.button("HOLO", key=f"holo_{key}"):
+            st.session_state.node = key
+            st.session_state.mode = "holo"
+            st.rerun()
+
+        if c2.button("HARD", key=f"hard_{key}"):
+            st.session_state.node = key
+            st.session_state.mode = "hardcore"
+            st.rerun()
+
         if c3.button("HACK", key=f"hacker_{key}"):
             st.session_state.node = key
             st.session_state.mode = "hacker"
@@ -232,4 +279,7 @@ with col_sandbox:
             st.session_state.mode = "elite"
             st.rerun()
 
-# End of app.py
+# ------------------------------------------------------------
+# END OF FILE
+# ------------------------------------------------------------
+
