@@ -1,43 +1,58 @@
+# MAEGIA Console - Fusion Sandbox (Mirror + Iframe)
+# Layout 3 Colonnes – Cyberpunk Light Mode
+
 import streamlit as st
 import streamlit.components.v1 as components
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 from pathlib import Path
-import random
 
-# ------------------------------------------------------------
-# CONFIG
-# ------------------------------------------------------------
-st.set_page_config(
-    page_title="MAEGIA Console",
-    page_icon="⬢",
-    layout="wide"
-)
+st.set_page_config(page_title="MAEGIA Console", layout="wide", page_icon="⬢")
 
 # ------------------------------------------------------------
 # LOAD CSS
 # ------------------------------------------------------------
-def load_css():
-    css = Path("style.css").read_text()
-    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
-
-load_css()
+if Path("style.css").exists():
+    st.markdown(f"<style>{Path('style.css').read_text()}</style>", unsafe_allow_html=True)
 
 # ------------------------------------------------------------
-# DATA
+# NODE DEFINITIONS
 # ------------------------------------------------------------
-SITES = {
-    "game":      {"label": "GAME // Arcade",        "url": "https://game.maegia.tv/?embed=true"},
-    "kragzouy":  {"label": "KRAGZOUY // Zone X",    "url": "https://kragzouy.maegia.tv/?embed=true"},
-    "oracle":    {"label": "ORACLE // Divination",  "url": "https://oracle.maegia.tv/?embed=true"},
-    "pali":      {"label": "PALI // Linguistique",  "url": "https://pali.maegia.tv/?embed=true"},
-    "cybermind": {"label": "CYBERMIND // Central",  "url": "https://cybermind.fr"}
+NODES = {
+    "game": {
+        "label": "GAME // Arcade",
+        "url": "https://game.maegia.tv/?embed=true",
+    },
+    "kragzouy": {
+        "label": "KRAGZOUY // Zone X",
+        "url": "https://kragzouy.maegia.tv/?embed=true",
+    },
+    "oracle": {
+        "label": "ORACLE // Divination",
+        "url": "https://oracle.maegia.tv/?embed=true",
+    },
+    "pali": {
+        "label": "PALI // Linguistique",
+        "url": "https://pali.maegia.tv/?embed=true",
+    },
+    "cybermind": {
+        "label": "CYBERMIND // Central",
+        "url": "https://cybermind.fr",
+    },
+    "ganimed": {
+        "label": "GANIMED // Nexus",
+        "url": "https://ganimed.fr",
+    },
 }
 
 DEFAULT_MODE = {
-    "game": "hardcore",
+    "game": "holo",
     "kragzouy": "holo",
     "oracle": "holo",
     "pali": "hardcore",
-    "cybermind": "holo"
+    "cybermind": "holo",
+    "ganimed": "holo",
 }
 
 MODES = ["holo", "hardcore", "hacker", "elite"]
@@ -51,15 +66,13 @@ st.session_state.setdefault("console", [
     "Type 'help' for commands."
 ])
 st.session_state.setdefault("node", "cybermind")
-st.session_state.setdefault("url", SITES["cybermind"]["url"])
 st.session_state.setdefault("mode", DEFAULT_MODE["cybermind"])
 st.session_state.setdefault("theme", "cyan")
 st.session_state.setdefault("flux", False)
 st.session_state.setdefault("ascii", False)
-st.session_state.setdefault("theme_before_hacker", "cyan")
 
 # ------------------------------------------------------------
-# HELP / COMMANDS
+# CONSOLE ENGINE
 # ------------------------------------------------------------
 def help_text():
     return """
@@ -78,22 +91,18 @@ OTHER:
 """
 
 def list_nodes():
-    return "\n".join([f"- {k}: {v['label']}" for k,v in SITES.items()])
-
+    return "
+".join([f"- {k}: {v['label']}" for k, v in NODES.items()])
 
 def parse(cmd):
     c = cmd.strip().lower()
 
-    if c in ["help", "?"]:
-        return ("print", help_text())
-    if c in ["list", "ls"]:
-        return ("print", list_nodes())
-    if c in ["clear", "cls"]:
-        return ("clear", None)
+    if c in ["help", "?"]: return ("print", help_text())
+    if c in ["list", "ls"]: return ("print", list_nodes())
+    if c in ["clear", "cls"]: return ("clear", None)
 
     if c == "flux on": return ("flux", True)
     if c == "flux off": return ("flux", False)
-
     if c == "ascii on": return ("ascii", True)
     if c == "ascii off": return ("ascii", False)
 
@@ -103,53 +112,67 @@ def parse(cmd):
     if c.startswith("connect "):
         parts = c.split()
         node = parts[1]
-        if node not in SITES:
+        if node not in NODES:
             return ("print", f"Unknown node '{node}'")
 
         mode = DEFAULT_MODE[node]
         if "--mode" in parts:
-            m = parts[parts.index("--mode")+1]
-            if m in MODES:
-                mode = m
-
+            idx = parts.index("--mode") + 1
+            if idx < len(parts) and parts[idx] in MODES:
+                mode = parts[idx]
         return ("load", (node, mode))
 
     return ("print", f"Unknown command '{cmd}'")
 
 # ------------------------------------------------------------
-# ASCII RAIN
+# SANDBOX FUSION (IFRAME OR MIRROR)
 # ------------------------------------------------------------
-def ascii_line():
-    chars = "01░▒▓█"
-    st.session_state.console.append(
-        "".join(random.choice(chars) for _ in range(60))
-    )
+def is_streamlit_app(url: str) -> bool:
+    host = urlparse(url).hostname or ""
+    return host.endswith("streamlit.app") or "maegia.tv" in host
 
-# ------------------------------------------------------------
-# SANDBOX (iframe simple)
-# ------------------------------------------------------------
-def sandbox(url, mode):
+def sandbox(node: str, mode: str):
+    url = NODES[node]["url"]
 
-    klass = {
-        "holo": "mode-holo",
-        "hardcore": "mode-hardcore",
-        "hacker": "mode-hacker",
-        "elite": "mode-elite"
-    }[mode]
+    # 1) MIRROR pour Streamlit
+    if "?embed=true" in url or is_streamlit_app(url):
+        try:
+            html = requests.get(url, timeout=6).text
+            soup = BeautifulSoup(html, "html.parser")
+            for s in soup.find_all("script"):
+                s.decompose()
+            snapshot = str(soup)
+        except Exception as e:
+            snapshot = f"<p style='color:red;'>Mirror error: {e}</p>"
 
-    overlay = "<div class='flux-overlay'></div>" if st.session_state.flux else ""
+        components.html(f"""
+        <div class='sandbox-frame mode-{mode}'>{snapshot}</div>
+        """, height=800, scrolling=True)
+        return
 
-    html = f"""
-    <div class="sandbox-frame {klass}">
-        {overlay}
-        <iframe src="{url}" class="sandbox-iframe"></iframe>
+    # 2) IFRAME pour sites HTML classiques
+    components.html(f"""
+    <div class='sandbox-frame mode-{mode}' id='sandboxContainer'>
+        <iframe id='sandboxIframe' src='{url}'></iframe>
     </div>
-    """
-
-    components.html(html, height=0)
+    <script>
+    function resizeIframe() {{
+        const f = document.getElementById('sandboxIframe');
+        const c = document.getElementById('sandboxContainer');
+        if (!f || !c) return;
+        const top = c.getBoundingClientRect().top;
+        const h = window.innerHeight - top - 30;
+        f.style.height = h + 'px';
+        c.style.height = h + 'px';
+    }}
+    resizeIframe();
+    setTimeout(resizeIframe, 150);
+    window.addEventListener('resize', resizeIframe);
+    </script>
+    """, height=0)
 
 # ------------------------------------------------------------
-# THEME SWITCH
+# APPLY THEME
 # ------------------------------------------------------------
 st.markdown(f"""
 <script>
@@ -159,130 +182,42 @@ document.body.classList.add('{st.session_state.theme}');
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------
-# LAYOUT (console left, cards right)
+# LAYOUT 3 COLONNES
 # ------------------------------------------------------------
-col_left, col_right = st.columns([2,1])
-
-# ------------------------------------------------------------
-# LEFT : CONSOLE
-# ------------------------------------------------------------
-with col_left:
-
-    tab = st.radio("Navigation", ["Console","Info","Oracle AI"], horizontal=True)
-
-    if tab == "Console":
-
-        if st.session_state.ascii:
-            ascii_line()
-
-        st.text_area("Console", "\n".join(st.session_state.console), height=230)
-
-        with st.form("cmdform", clear_on_submit=True):
-            cmd = st.text_input(">_")
-            run = st.form_submit_button("EXECUTE")
-
-        if run and cmd:
-            st.session_state.console.append("> " + cmd)
-            act, pay = parse(cmd)
-
-            if act == "print":
-                st.session_state.console.append(pay)
-
-            elif act == "clear":
-                st.session_state.console = ["Console cleared."]
-
-            elif act == "flux":
-                st.session_state.flux = pay
-
-            elif act == "ascii":
-                st.session_state.ascii = pay
-
-            elif act == "theme":
-                if st.session_state.theme != "hacker":
-                    st.session_state.theme_before_hacker = st.session_state.theme
-                st.session_state.theme = pay
-
-            elif act == "load":
-                node, mode = pay
-
-                # theme switch if hacker
-                if mode in ["hacker", "elite"]:
-                    st.session_state.theme_before_hacker = st.session_state.theme
-                    st.session_state.theme = "hacker"
-                else:
-                    if st.session_state.theme == "hacker":
-                        st.session_state.theme = st.session_state.theme_before_hacker
-
-                st.session_state.node = node
-                st.session_state.url = SITES[node]["url"]
-                st.session_state.mode = mode
-                st.session_state.console.append(f"Loading {node} [{mode}]")
-
-            st.rerun()
-
-        sandbox(st.session_state.url, st.session_state.mode)
-
-    elif tab == "Info":
-        st.write(st.session_state)
-
-    else:
-        q = st.text_input("Question:")
-        if st.button("Ask"):
-            st.write("Response:", q[::-1])
+col_console, col_sandbox, col_nodes = st.columns([1.2, 2.2, 1])
 
 # ------------------------------------------------------------
-# RIGHT : CARDS (sans fullscreen)
+# CONSOLE LEFT
 # ------------------------------------------------------------
-with col_right:
-    st.markdown("<div class='right-scroll'>", unsafe_allow_html=True)
+with col_console:
+    st.markdown("### Console")
 
-    for key, meta in SITES.items():
+    st.text_area("", "
+".join(st.session_state.console), height=360)
 
-        active = " node-active" if key == st.session_state.node else ""
+    with st.form("cmdform", clear_on_submit=True):
+        cmd = st.text_input(" >_")
+        run = st.form_submit_button("EXECUTE")
 
-        st.markdown(
-            f"""
-            <div class="node-card{active}">
-                <div class="node-title">{meta['label']}</div>
-                <div class="node-url">{meta['url']}</div>
-            </div>
-            """, unsafe_allow_html=True
-        )
+    if run and cmd:
+        st.session_state.console.append("> " + cmd)
+        act, pay = parse(cmd)
 
-        if st.button(f"CONNECT {key}"):
-            st.session_state.node = key
-            st.session_state.url = meta["url"]
-            st.session_state.mode = DEFAULT_MODE[key]
-            st.rerun()
+        if act == "print":
+            st.session_state.console.append(pay)
+        elif act == "clear":
+            st.session_state.console = ["Console cleared."]
+        elif act == "flux":
+            st.session_state.flux = pay
+        elif act == "ascii":
+            st.session_state.ascii = pay
+        elif act == "theme":
+            st.session_state.theme = pay
+        elif act == "load":
+            node, mode = pay
+            st.session_state.node = node
+            st.session_state.mode = mode
+            st.session_state.console.append(f"Loading {node} [{mode}]")
+        st.rerun()
 
-        c1, c2, c3, c4 = st.columns(4)
-
-        if c1.button("HOLO", key=f"holo_{key}"):
-            st.session_state.node = key
-            st.session_state.url = meta["url"]
-            st.session_state.mode = "holo"
-            st.rerun()
-
-        if c2.button("HARD", key=f"hard_{key}"):
-            st.session_state.node = key
-            st.session_state.url = meta["url"]
-            st.session_state.mode = "hardcore"
-            st.rerun()
-
-        if c3.button("HACK", key=f"hacker_{key}"):
-            st.session_state.node = key
-            st.session_state.url = meta["url"]
-            st.session_state.mode = "hacker"
-            st.session_state.theme_before_hacker = st.session_state.theme
-            st.session_state.theme = "hacker"
-            st.rerun()
-
-        if c4.button("ELITE", key=f"elite_{key}"):
-            st.session_state.node = key
-            st.session_state.url = meta["url"]
-            st.session_state.mode = "elite"
-            st.session_state.theme_before_hacker = st.session_state.theme
-            st.session_state.theme = "hacker"
-            st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
+# ------------------------------------------------------------
