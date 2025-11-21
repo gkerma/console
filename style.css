@@ -194,3 +194,12 @@ input[type="text"] {
 .redirect-msg a {
   color: #ff53d3;
 }
+
+.panel-inline {
+  margin-top: 14px;
+}
+
+.node-card.node-active {
+  border-color: #ff53d3;
+  box-shadow: 0 0 18px rgba(255, 83, 211, 0.8);
+}
