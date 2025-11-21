@@ -214,7 +214,7 @@ def main():
                 append_log(f"Chargement du nœud '{target}' dans la fenêtre centrale → {url}")
 
             # rafraîchit pour mettre à jour le iframe
-            st.experimental_rerun()
+            st.rerun()
 
         st.markdown("</div>", unsafe_allow_html=True)  # fin console-shell
 
