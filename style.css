@@ -4,7 +4,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500&family=Orbitron:wght@500;700&family=VT323&display=swap');
 
 /* ========================================================================
-   GLOBAL & RESET
+   GLOBAL RESET
    ======================================================================== */
 html, body, .stApp {
     margin: 0 !important;
@@ -13,12 +13,10 @@ html, body, .stApp {
     color: #00f6ff;
     font-family: 'Roboto Mono', monospace;
 }
-
-/* Hide Streamlit UI */
 #MainMenu, footer, header {visibility: hidden;}
 
 /* ========================================================================
-   SCANLINES GLOBAL
+   GLOBAL SCANLINES
    ======================================================================== */
 .scanlines {
     pointer-events: none;
@@ -36,23 +34,39 @@ html, body, .stApp {
 }
 
 /* ========================================================================
-   INTRO MAEGIA GLITCH
+   INTRO MAEGIA (NOIR FIX)
    ======================================================================== */
 #introScreen {
     position: fixed;
     inset: 0;
+    background: black;
     z-index: 999999;
-    background: #000;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-direction: column;
 
-    /* CORRECTION: l’intro doit toujours disparaître */
     opacity: 1;
     animation: introFadeOut 1.2s ease-out forwards;
     animation-delay: 2.8s;
 }
 
+.intro-logo {
+    font-family: Orbitron, sans-serif;
+    font-size: 46px;
+    color: #C86BFA;
+    animation: neonIntro 3s infinite ease-in-out;
+}
+.intro-sub {
+    margin-top: 10px;
+    font-size: 16px;
+    opacity: 0.8;
+}
+@keyframes neonIntro {
+  0% { filter: drop-shadow(0 0 4px #C86BFA); }
+  50% { filter: drop-shadow(0 0 16px #FF7BFA); }
+  100% { filter: drop-shadow(0 0 4px #C86BFA); }
+}
 @keyframes introFadeOut {
     0% { opacity: 1; }
     100% { opacity: 0; visibility: hidden; }
@@ -78,7 +92,7 @@ html, body, .stApp {
 }
 .node-active {
     border-color: #ff53d3 !important;
-    box-shadow: 0 0 22px rgba(255,83,211,0.9) !important;
+    box-shadow: 0 0 22px rgba(255,83,211,0.8) !important;
 }
 .node-title {
     font-family: Orbitron, sans-serif;
@@ -92,7 +106,7 @@ html, body, .stApp {
 }
 
 /* ========================================================================
-   RIGHT SIDEBAR SCROLL
+   RIGHT PANEL SCROLL
    ======================================================================== */
 .right-panel-scroll {
     max-height: calc(100vh - 20px);
@@ -106,7 +120,7 @@ html, body, .stApp {
 }
 
 /* ========================================================================
-   CYBERSANDBOX IFRAME FRAME
+   CYBERSANDBOX (IFRAME)
    ======================================================================== */
 .cybersandbox-frame {
     position: relative;
@@ -126,9 +140,7 @@ html, body, .stApp {
     z-index: 5;
 }
 
-/* ------------------------------------------------------------------------
-   FULLSCREEN BUTTON
-   ------------------------------------------------------------------------ */
+/* FULLSCREEN BUTTON */
 .cyber-fullscreen-btn {
     position: absolute;
     top: 14px;
@@ -143,7 +155,7 @@ html, body, .stApp {
 }
 
 /* ========================================================================
-   WARP TRANSITION (iframe loading)
+   WARP TRANSITION
    ======================================================================== */
 .warp-transition {
     animation: cyberWarp 0.6s ease-out;
@@ -155,7 +167,7 @@ html, body, .stApp {
 }
 
 /* ========================================================================
-   MODES VISUELS — HOLO / HARDCORE / FULLSCREEN
+   MODE HOLO
    ======================================================================== */
 .cyber-holo {
     filter: drop-shadow(0 0 8px #00f6ff) brightness(1.1);
@@ -169,6 +181,9 @@ html, body, .stApp {
     100% { filter: drop-shadow(0 0 8px #00f6ff); }
 }
 
+/* ========================================================================
+   MODE HARDCORE
+   ======================================================================== */
 .cyber-hardcore {
     animation:
         glitch .25s infinite steps(2,end),
@@ -190,7 +205,7 @@ html, body, .stApp {
 }
 
 /* ========================================================================
-   HACKER MODE GLOBAL (terminal vert)
+   MODE HACKER GLOBAL (terminal vert)
    ======================================================================== */
 body.hacker, .stApp.hacker {
     background: #000 !important;
@@ -208,19 +223,19 @@ body.hacker, .stApp.hacker {
     box-shadow: 0 0 12px #00FF66 !important;
 }
 .hacker .cybersandbox-frame {
-    border: 2px solid #00FF66;
+    border: 2px solid #00FF66 !important;
     box-shadow: 0 0 22px #00FF66;
 }
 .hacker-mode iframe {
     filter:
       grayscale(1)
       brightness(0.8)
-      contrast(1.7)
+      contrast(1.6)
       hue-rotate(80deg);
 }
 
 /* ========================================================================
-   ELITE MODE (CRT fort / glitch)
+   MODE HACKER ELITE (CRT ++)
    ======================================================================== */
 .hacker-elite-mode {
     border: 2px solid #00FF33 !important;
@@ -247,12 +262,12 @@ body.hacker, .stApp.hacker {
 }
 @keyframes eliteGlitch {
     0%{clip-path: inset(0 0 0 0);}
-    50%{clip-path: inset(5% 0 15% 0);}
+    50%{clip-path: inset(6% 0 15% 0);}
     100%{clip-path: inset(0 0 0 0);}
 }
 
 /* ========================================================================
-   PURPLE THEME (UI ONLY)
+   THEME PURPLE
    ======================================================================== */
 body.purple, .stApp.purple {
     background: radial-gradient(circle at top, #2D0045 0, #0E0016 50%, #000) !important;
@@ -269,7 +284,7 @@ body.purple, .stApp.purple {
 }
 
 /* ========================================================================
-   FLUX DATA MATRIX OVERLAY
+   FLUX DATA MATRIX
    ======================================================================== */
 .data-matrix {
     position: absolute;
