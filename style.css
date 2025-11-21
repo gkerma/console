@@ -203,3 +203,60 @@ input[type="text"] {
   border-color: #ff53d3;
   box-shadow: 0 0 18px rgba(255, 83, 211, 0.8);
 }
+
+/* ============================================================
+   CYBERPUNK SANDBOX IFRAME MODE
+   ============================================================ */
+
+.cybersandbox-frame {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    margin-top: 20px;
+    border: 2px solid rgba(0, 246, 255, 0.9);
+    box-shadow: 0 0 25px rgba(0, 246, 255, 0.4),
+                inset 0 0 18px rgba(255, 0, 212, 0.2);
+    background: #000;
+}
+
+/* Scanlines / CRT overlay */
+.cybersandbox-frame::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.04) 0px,
+        rgba(255,255,255,0.04) 1px,
+        rgba(0,0,0,0.05) 2px
+    );
+    mix-blend-mode: soft-light;
+    opacity: 0.25;
+    z-index: 10;
+}
+
+/* Glitch border animation */
+@keyframes cyberglow {
+    0%   { box-shadow: 0 0 14px #00f6ff; }
+    50%  { box-shadow: 0 0 28px #ff00d4; }
+    100% { box-shadow: 0 0 14px #00f6ff; }
+}
+
+.cybersandbox-frame.active {
+    animation: cyberglow 2.8s infinite ease-in-out;
+}
+
+/* Darkening option for external sites */
+.cybersandbox-darken {
+    filter: brightness(0.80) contrast(1.15) saturate(1.1);
+}
+
+/* The actual iframe */
+.cybersandbox-frame iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    position: relative;
+    z-index: 5;
+}
