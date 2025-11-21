@@ -114,3 +114,26 @@
     border-radius: 0 !important;
     z-index: 999999 !important;
 }
+
+/* =========================================
+   COLONNE DROITE SCROLLABLE INDEPENDANTE
+   ========================================= */
+
+.right-panel-scroll {
+    max-height: calc(100vh - 20px);
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.right-panel-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.right-panel-scroll::-webkit-scrollbar-thumb {
+    background: #00f6ff;
+    border-radius: 6px;
+}
+
+.right-panel-scroll::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+}
