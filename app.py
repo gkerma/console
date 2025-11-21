@@ -32,7 +32,7 @@ if "intro_done" not in st.session_state:
         <div style='margin-top:10px;color:#FFF;opacity:0.75;font-size:18px;'>BOOTING...</div>
     </div>
     """, unsafe_allow_html=True)
-    st.stop()
+    st.experimental_rerun()
 
 # ------------------------------------------------------------
 # DATA
